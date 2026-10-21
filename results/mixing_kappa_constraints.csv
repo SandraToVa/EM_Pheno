@@ -1,0 +1,7 @@
+state,content,variant,Gamma_at_kappaH_keV,kappa_H_used,Gamma_UL_keV,kappa_H_max
+psi(3770),psi(1D),A-NL,43.7817,0.856492,21.76,0.603819
+psi(3770),psi(1D),B-NL,31.8036,0.856492,21.76,0.708459
+psi(4040),1(s/d)1 hybrid,A-NL,286.167,0.856492,33.3389,0.292341
+psi(4040),1(s/d)1 hybrid,B-NL,73.1063,0.856492,33.3389,0.578392
+psi(4415),2(s/d)1 hybrid,A-NL,724.671,0.856492,73.8043,0.273334
+psi(4415),2(s/d)1 hybrid,B-NL,28.8002,0.856492,73.8043,1.37109
