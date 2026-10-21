@@ -4,8 +4,14 @@ Variants of the hybrid vertex (Sec. 3.2-3.4 and 4.3 of the notes):
   'A'  E_1 = pi/r (string gap of the matching, as in the notes)
   'B'  E_1 = V_Pi_u(r) - V_Sigma_g(r) (gap of the BOEFT potentials)
 each in the local (BOEFT, multipole-expanded) or non-local (string) form.
-Couplings: c_i = kappa_i e e_Q, with c1 = c2 = c3 (single EST structure)
-unless stated otherwise.
+Couplings: c_i = kappa_i e e_Q, with c1 = c2 = c3 = c4 (single EST structure)
+unless stated otherwise. c4 is the coupling of the Sigma_u^- (two-phonon)
+vertex g_B|| = 4 c4/(sigma r) of the v10 notes.
+
+Sigma_u^- vertex (EM_Pheno v2): sigma_mode = 'EST' (default, LEFs of the notes),
+'norm' (g_B|| rescaled to g_B_perp, see amplitudes.py) or 'off' (pure Pi_u
+vertex, = EM_Pheno v1). In variant B the Sigma_u^- gap 3 pi/r is replaced by
+dVS = V_Sigma_u - V_Sigma_g (data/wf_*_nomix.mat, field dVSig).
 """
 import numpy as np
 from scipy.io import loadmat
@@ -59,6 +65,15 @@ def load_dV(flavor):
     return loadmat(os.path.join(DATA_DIR, f'wf_{flavor}_nomix.mat'))['dV'].ravel()
 
 
+def load_dVS(flavor):
+    """V_Sigma_u^- - V_Sigma_g^+ on the mesh (GeV)"""
+    return loadmat(os.path.join(DATA_DIR, f'wf_{flavor}_nomix.mat'))['dVSig'].ravel()
+
+
+def load_gaps(flavor):
+    return load_dV(flavor), load_dVS(flavor)
+
+
 def hybrid_state(lib, h, S=0, J=None):
     label, Jc, kind, n = h[0], h[1], h[2], h[3]
     k = lib.hybrid_index(Jc, kind, n)
@@ -66,37 +81,43 @@ def hybrid_state(lib, h, S=0, J=None):
     return st
 
 
-def params(flavor, variant, kH, dV):
+def params(flavor, variant, kH, dV, sigma_mode='EST'):
+    """dV: (dV, dVS) tuple from load_gaps, or dV alone (then dVS is loaded)"""
     gap, nl = VARIANTS[variant]
-    return Params(flavor, kH=kH, nonloc=nl, gap=gap, dV=dV)
+    if isinstance(dV, tuple):
+        dV, dVS = dV
+    else:
+        dVS = load_dVS(flavor)
+    return Params(flavor, kH=kH, nonloc=nl, gap=gap, dV=dV, dVS=dVS, sigma_mode=sigma_mode)
 
 
-def gamma(flavor, lib, dV, h, fin, variant, kH, S=0, Ji=None, Jf=None):
+def gamma(flavor, lib, dV, h, fin, variant, kH, S=0, Ji=None, Jf=None, sigma_mode='EST'):
     """width in keV of hybrid h -> final (label,n,l,mass) + gamma"""
     st = hybrid_state(lib, h, S=S, J=Ji)
     f = lib.quarkonium(fin[1], fin[2], S=S, J=Jf, mass=fin[3])
     E = photon_energy(h[6], fin[3])
-    return width(f, st, E, params(flavor, variant, kH, dV), lib.r) * GEV2KEV, E
+    return width(f, st, E, params(flavor, variant, kH, dV, sigma_mode), lib.r) * GEV2KEV, E
 
 
-def quadratic_form(flavor, lib, dV, h, fin, variant):
-    """Gamma = c^T Q c with c = (c1, c2, c3)/(e e_Q). Returns Q (3x3, keV)."""
-    e = np.eye(3)
+def quadratic_form(flavor, lib, dV, h, fin, variant, sigma_mode='EST'):
+    """Gamma = c^T Q c with c = (c1, c2, c3, c4)/(e e_Q). Returns Q (4x4, keV)."""
+    n = 4
+    e = np.eye(n)
     G = {}
-    for i in range(3):
-        G[(i, i)] = gamma(flavor, lib, dV, h, fin, variant, tuple(e[i]))[0]
-    Q = np.zeros((3, 3))
-    for i in range(3):
+    for i in range(n):
+        G[(i, i)] = gamma(flavor, lib, dV, h, fin, variant, tuple(e[i]), sigma_mode=sigma_mode)[0]
+    Q = np.zeros((n, n))
+    for i in range(n):
         Q[i, i] = G[(i, i)]
-        for j in range(i + 1, 3):
-            gij = gamma(flavor, lib, dV, h, fin, variant, tuple(e[i] + e[j]))[0]
+        for j in range(i + 1, n):
+            gij = gamma(flavor, lib, dV, h, fin, variant, tuple(e[i] + e[j]), sigma_mode=sigma_mode)[0]
             Q[i, j] = Q[j, i] = 0.5 * (gij - G[(i, i)] - G[(j, j)])
     return Q
 
 
 def predictions(flavor, kappa, variants=('A-NL', 'A-L', 'B-NL', 'B-L')):
     lib = Library(flavor)
-    dV = load_dV(flavor)
+    dV = load_gaps(flavor)
     rows = []
     for h in HYBRIDS[flavor]:
         for fin in FINALS[flavor]:
@@ -105,9 +126,9 @@ def predictions(flavor, kappa, variants=('A-NL', 'A-L', 'B-NL', 'B-L')):
             Jc = h[1]
             # parity selection rule (-1)^l' = eta_xi; skip forbidden channels
             if h[2] == 'sigma':
-                # p0 (0++): computed only for P-wave finals; it vanishes because
-                # Sigma_u^- does not couple at this order (g_B|| is NNLO)
-                allowed = fin[2] == 1
+                # p0 (0++, pure Sigma_u^-): l' = 1 (local, rank 1);
+                # l' = 3 only through the non-local rank-3 term
+                allowed = fin[2] in (1, 3)
             else:
                 xi = -1 if h[2] == 'minus' else +1
                 allowed = ((-1) ** fin[2] == -xi * (-1) ** Jc) and abs(fin[2] - Jc) <= 2
@@ -116,11 +137,17 @@ def predictions(flavor, kappa, variants=('A-NL', 'A-L', 'B-NL', 'B-L')):
             res = {'flavor': flavor, 'hybrid': h[0], 'JPC': h[4], 'candidate': h[5],
                    'M_i': h[6], 'M_i_src': h[7], 'final': fin[0], 'M_f': fin[3],
                    'M_f_src': fin[4], 'Gtot_MeV': h[8]}
+            kk = (kappa,) * 4
             for v in variants:
-                g, E = gamma(flavor, lib, dV, h, fin, v, (kappa, kappa, kappa))
+                g, E = gamma(flavor, lib, dV, h, fin, v, kk)
                 res[v] = g
             res['k_MeV'] = E * 1e3
-            res['c2only_A-NL'] = gamma(flavor, lib, dV, h, fin, 'A-NL', (0.0, kappa, 0.0))[0]
+            # magnetic (c2, c4) couplings only
+            res['c2only_A-NL'] = gamma(flavor, lib, dV, h, fin, 'A-NL', (0.0, kappa, 0.0, kappa))[0]
+            # Sigma_u^- options: off (= EM_Pheno v1) and norm
+            for v in ('A-NL', 'B-NL'):
+                res[v + '_off'] = gamma(flavor, lib, dV, h, fin, v, kk, sigma_mode='off')[0]
+                res[v + '_norm'] = gamma(flavor, lib, dV, h, fin, v, kk, sigma_mode='norm')[0]
             rows.append(res)
     return rows
 

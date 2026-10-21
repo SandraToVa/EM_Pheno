@@ -34,5 +34,70 @@
    "Gamma_UL_keV": 73.80429410731928,
    "sigma_per_B_pb": 2384.685093581104
   }
+ },
+ "lattice": {
+  "chic0_Jpsi": {
+   "Gamma_LO_local_keV": 203.2264491757986,
+   "Gamma_LO_nonlocal_keV": 200.0610736706475,
+   "Gamma_fit_keV": 146.76065721536952,
+   "dGamma_fit_keV": 10.066934726735182,
+   "Gamma_lattice_keV": 208.6,
+   "Gamma_lattice_latmasses_keV": 247.4,
+   "Gamma_PDG_keV": 167.4,
+   "dGamma_PDG_keV": 11.740171421235722,
+   "kappa_equiv_lattice": 1.0211178179022518,
+   "kappa_equiv_PDG": 0.914737385654824,
+   "lattice_over_PDG": 1.2461170848267622
+  },
+  "beta2": {
+   "beta2_from_1S": 0.29453035686133294,
+   "beta2_from_1P": 0.2260151042867406,
+   "beta2_lattice": [
+    0.304,
+    0.033
+   ]
+  },
+  "radii": [
+   {
+    "state": "eta_c(1S)",
+    "nl": "1S",
+    "r_rms_fm": 0.4453147371997114,
+    "r_ch_ours_fm": 0.2226573685998557,
+    "r_ch_lat_fm": 0.243,
+    "err_lat_fm": 0.007,
+    "ratio": 0.9162854674891181,
+    "pull": -2.906090200020615
+   },
+   {
+    "state": "J/psi",
+    "nl": "1S",
+    "r_rms_fm": 0.4453147371997114,
+    "r_ch_ours_fm": 0.2226573685998557,
+    "r_ch_lat_fm": 0.249,
+    "err_lat_fm": 0.004,
+    "ratio": 0.8942062995978141,
+    "pull": -6.585657850036077
+   },
+   {
+    "state": "eta_c(2S)",
+    "nl": "2S",
+    "r_rms_fm": 0.8279219432388035,
+    "r_ch_ours_fm": 0.41396097161940176,
+    "r_ch_lat_fm": 0.62,
+    "err_lat_fm": 0.18,
+    "ratio": 0.667678986482906,
+    "pull": -1.1446612687811013
+   },
+   {
+    "state": "chi_c0(1P)",
+    "nl": "1P",
+    "r_rms_fm": 0.6562778441087088,
+    "r_ch_ours_fm": 0.3281389220543544,
+    "r_ch_lat_fm": 0.339,
+    "err_lat_fm": 0.018,
+    "ratio": 0.967961421989246,
+    "pull": -0.6033932192025342
+   }
+  ]
  }
 }

@@ -10,6 +10,10 @@ with the photon along +z and helicity h, for
   * 'HQ'  hybrid -> quarkonium with the 1+- vertex of Eq. (110)
           O_h = 2E/sqrt(pi sigma) [ c2 h (eps* - rhat (rhat.eps*))
                 + i c3 (E r/pi) (z.rhat)(rhat x eps*) - i c1 (E r/pi)(rhat.eps*)(rhat x z) ] * FF_H
+          + h (g_B|| + E g_E^Sigma)(rhat.eps*)(rhat.psi) * sqrt(pi sigma)/2   [v10, Eq. (eq:Lfull)]
+          The last (longitudinal) term only sees the Sigma_u^- component rhat.psi of
+          the hybrid wave function; g_B|| = 4 c4/(sigma r), g_E^Sigma = -4 c3/(3 pi sigma)
+          [Eq. (eq:gSigma)].
   * 'QH'  quarkonium -> hybrid (hermitian conjugate vertex; only relevant for
           mixed final states)
 FF = 1 in the local (BOEFT, multipole-expanded) limit. In the non-local
@@ -17,6 +21,23 @@ FF = 1 in the local (BOEFT, multipole-expanded) limit. In the non-local
 (61), (66) give
           FF_E1 = j0(q_z r/2),   FF_H = pi^2 cos(q_z r/2)/(pi^2 - q_z^2 r^2),
 q_z = E cos(theta) (theta = angle between rhat and the photon).
+For the Sigma_u^- vertex the densities of Eq. (eq:rhoSigma) contain cos(pi z/r)
+and cos(3 pi z/r); with f = ff_H and F3 = ff_H3 (both = 1 at q_z = 0):
+          FT[rho_B||]      = (4 c4/(sigma r)) f + (c2/(2 sigma r)) (f - F3)
+          FT[rho_E^Sigma]  = -(4 c3/(3 pi sigma)) (9 f - F3)/8 .
+The c2 piece of rho_B|| integrates to zero and vanishes in the local limit.
+
+Sigma_u^- options (Params.sigma_mode):
+  'EST'  LEFs of the notes, Eq. (eq:gSigma)            (default)
+  'norm' whole Sigma vertex rescaled by sqrt(sigma) r/(2 sqrt(pi)), so that
+         g_B|| = 2 c4/sqrt(pi sigma) = g_B_perp(c2 = c4) at every r
+         (the r -> 0 condition g_B||(0) = g_B_perp(0) of Sec. sec:matchSigma),
+         keeping the EST ratio g_E^Sigma/g_B||
+  'off'  no Sigma_u^- coupling (reproduces EM_Pheno v1 exactly)
+Gap variants: 'string' uses E_1 = pi/r (Pi_u) and 3 pi/r (Sigma_u^-);
+'lattice' replaces them by dV = V_Pi_u - V_Sigma_g and dVS = V_Sigma_u - V_Sigma_g:
+amplitude x sqrt(dV r/pi), E r/pi -> E/dV (Pi) and x sqrt(dVS r/(3 pi)),
+E r/(3 pi) -> E/dVS (Sigma; model assumption, by analogy with Pi).
 
 Heavy-quark spin is a spectator: for initial |(Li S) Ji Mi> and final
 |(Lf S) Jf Mf>
@@ -57,16 +78,40 @@ def ff_H(x):
     return out
 
 
+def ff_H3(x):
+    """9 pi^2 cos(x/2)/(9 pi^2 - x^2) (normalized FT of cos(3 pi z/r)),
+    regular at |x| = 3 pi (limit -3 pi/4)"""
+    x = np.asarray(x, dtype=float)
+    out = np.empty_like(x)
+    a = 9.0 * np.pi ** 2
+    near = np.abs(np.abs(x) - 3.0 * np.pi) < 1e-6
+    xx = x[~near]
+    out[~near] = a * np.cos(xx / 2.0) / (a - xx ** 2)
+    out[near] = -3.0 * np.pi / 4.0
+    return out
+
+
 class Params:
     """Couplings. kappa_Q multiplies e e_Q in g_E1 (c1 of quarkonium);
-    kH = (c1, c2, c3) of the hybrid vertex in units of e e_Q."""
+    kH = (c1, c2, c3, c4) of the hybrid vertex in units of e e_Q
+    (a 3-tuple (c1, c2, c3) sets c4 = c2, the r -> 0 condition g_B|| = g_B_perp).
+    sigma_mode: 'EST' | 'norm' | 'off' (Sigma_u^- vertex, see module docstring);
+    dVS: V_Sigma_u - V_Sigma_g on the mesh (needed for gap='lattice' with Sigma on)."""
 
-    def __init__(self, flavor, kappa_Q=1.0, kH=(1.0, 1.0, 1.0), sigma=0.21,
-                 nonloc=False, include_HH=True, include_QH=True, gap='string', dV=None):
+    def __init__(self, flavor, kappa_Q=1.0, kH=(1.0, 1.0, 1.0, 1.0), sigma=0.21,
+                 nonloc=False, include_HH=True, include_QH=True, gap='string', dV=None,
+                 sigma_mode='EST', dVS=None):
         self.flavor = flavor
         self.eeQ = E_CHARGE * CHARGE[flavor]
         self.kappa_Q = kappa_Q
-        self.kH = tuple(kH)
+        kH = tuple(kH)
+        if len(kH) == 3:
+            kH = kH + (kH[1],)
+        self.kH = kH
+        if sigma_mode not in ('EST', 'norm', 'off'):
+            raise ValueError(sigma_mode)
+        self.sigma_mode = sigma_mode
+        self.dVS = None if dVS is None else np.asarray(dVS)
         self.sigma = sigma
         self.nonloc = nonloc
         self.include_HH = include_HH
@@ -77,6 +122,8 @@ class Params:
         self.dV = None if dV is None else np.asarray(dV)
         if gap == 'lattice' and dV is None:
             raise ValueError('gap=lattice needs dV')
+        if gap == 'lattice' and sigma_mode != 'off' and dVS is None:
+            raise ValueError('gap=lattice with Sigma_u^- needs dVS')
 
 
 # ----------------------------------------------------------------------
@@ -102,7 +149,8 @@ def _orbital_bases(fc, ic, op, E, P):
     z = np.array([0.0, 0.0, 1.0])
     rxz = np.cross(rh, np.broadcast_to(z, rh.shape))
     cos = g.COS
-    c1, c2, c3 = P.kH
+    c1, c2, c3, c4 = P.kH
+    sig = P.sigma_mode != 'off'
     out = {}
     for h in (+1, -1):
         es = eps_star(h)
@@ -125,6 +173,9 @@ def _orbital_bases(fc, ic, op, E, P):
                           - 1j * c1 * rde * np.einsum('abi,abi->ab', rxz, fi))
                     yb = np.conj(ff)
                     terms = [('B', yb * TB), ('E', yb * TE)]
+                    if sig:   # longitudinal (Sigma_u^-) vertex h (rhat.eps*)(rhat.psi)
+                        TS = h * rde * rdotF * yb
+                        terms += [('S4', c4 * TS), ('S2', c2 * TS), ('S3', c3 * TS)]
                 elif op == 'QH':
                     # initial scalar, final vector (conjugated); conjugate vertex
                     ffc = np.conj(ff)
@@ -134,6 +185,9 @@ def _orbital_bases(fc, ic, op, E, P):
                     TE = (-1j * c3 * cos * np.einsum('abi,abi->ab', rxe, ffc)
                           + 1j * c1 * rde * np.einsum('abi,abi->ab', rxz, ffc))
                     terms = [('B', TB * fi), ('E', TE * fi)]
+                    if sig:   # conjugate: the (i curl E) piece flips sign, like TE
+                        TS = h * rde * rdotF * fi
+                        terms += [('S4', c4 * TS), ('S2', c2 * TS), ('S3', -c3 * TS)]
                 else:
                     raise ValueError(op)
                 prof = [(p, np.sum(g.W * t, axis=1)) for p, t in terms]
@@ -149,22 +203,44 @@ def orbital_amplitudes(fc, ic, op, E, P, r, absval=False):
     if absval:
         cc = np.abs(cc)
     x = E * np.outer(r, g.costh)             # q_z r on (r_k, theta_j)
+    one = np.ones_like(x)
     if op == 'E1':
         pref = -1j * E * P.kappa_Q * P.eeQ
-        FF = ff_E1(x) if P.nonloc else np.ones_like(x)
+        FFs = {'r': ff_E1(x) if P.nonloc else one}
     else:
         pref = 2.0 * E / np.sqrt(np.pi * P.sigma) * P.eeQ
-        FF = ff_H(x) if P.nonloc else np.ones_like(x)
-    # radial weights of each term type
+        if P.nonloc:
+            f, F3 = ff_H(x), ff_H3(x)
+            FFs = {'B': f, 'E': f, 'S4': f, 'S2': f - F3, 'S3': (9.0 * f - F3) / 8.0}
+        else:
+            FFs = {'B': one, 'E': one, 'S4': one, 'S2': None, 'S3': one}
+    # radial weights of each term type (amplitude = pref * sum c c w FF profile)
     if P.gap == 'string':
         wts = {'r': r, 'B': np.ones_like(r), 'E': E * r / np.pi}
     else:   # E_1(r) = dV(r): amplitude x sqrt(E_1 r/pi), (E r/pi) -> E/E_1
         s = np.sqrt(P.dV * r / np.pi)
         wts = {'r': r, 'B': s, 'E': s * E / P.dV}
+    if P.sigma_mode != 'off':
+        sq = np.sqrt(np.pi / P.sigma)
+        # sqrt(pi sigma)/2 x [g_B|| , c2 part of FT rho_B||, E g_E^Sigma] per unit c
+        wS4 = 2.0 * sq / r
+        wS2 = 0.25 * sq / r
+        wS3 = -2.0 * sq / r * (E * r / (3.0 * np.pi))
+        if P.gap == 'lattice':   # 3 pi/r -> dVS
+            sS = np.sqrt(P.dVS * r / (3.0 * np.pi))
+            wS4, wS2 = wS4 * sS, wS2 * sS
+            wS3 = -2.0 * sq / r * sS * E / P.dVS
+        if P.sigma_mode == 'norm':
+            lam = np.sqrt(P.sigma) * r / (2.0 * np.sqrt(np.pi))
+            wS4, wS2, wS3 = wS4 * lam, wS2 * lam, wS3 * lam
+        wts.update({'S4': wS4, 'S2': wS2, 'S3': wS3})
     out = {}
     for key, prof in bases.items():
         val = 0j
         for p, pr in prof:
+            FF = FFs[p]
+            if FF is None:                       # term absent in the local limit
+                continue
             K = FF @ pr                          # (N,) angular integral at each r_k
             val += np.sum(cc * wts[p] * K)
         out[key] = pref * val

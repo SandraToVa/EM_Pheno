@@ -25,6 +25,9 @@ function exportWavefunctions(qqbarPath, outDir, opts)
 %   = sum_i c_a,i c_b,i f(r_i)  (Gauss-Lagrange quadrature) and
 %   u(r_i) = c_i / sqrt(h*lambda_i).
 %   dV (1 x N): static gap V_Pi_u(r) - V_Sigma_g(r) at the mesh points (GeV).
+%   dVSig (1 x N): static gap V_Sigma_u^-(r) - V_Sigma_g(r) at the mesh points
+%         (GeV), from the single l = 1 channel of GQQbarS0Jcal0 (pure Sigma_u^-)
+%         and the l = 1 quarkonium potential (same centrifugal term 2/r^2).
 %
 % Channel content of each family (see the potentialMatrix of each file):
 %   mix = false
@@ -76,6 +79,10 @@ for f = 1:size(masses,1)
     [~,~,~,infQ] = QQbarS0J1(m, 'potential');
     VH = infH.V(mesh.r'); VQ = infQ.V(mesh.r');
     S.dV = squeeze(VH(1,1,:) - VQ(1,1,:))' / m;
+    % static gap Sigma_u^- - Sigma_g^+ (used by the variant-B Sigma vertex)
+    [~,~,~,infS] = GQQbarS0Jcal0(m, 'potential');
+    VS = infS.V(mesh.r');
+    S.dVSig = squeeze(VS(1,1,:) - VQ(1,1,:))' / m;
     save('-v7', fullfile(outDir, sprintf('wf_%s_nomix.mat', flav)), '-struct', 'S');
     fprintf('exported %s (m = %.3f), mix = false\n', flav, m);
 end

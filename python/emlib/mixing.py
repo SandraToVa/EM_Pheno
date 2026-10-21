@@ -13,7 +13,7 @@ Final chi_cJ and eta_c are also taken from the mix=true families.
 import numpy as np
 from .states import Library, State
 from .amplitudes import Params, width, photon_energy
-from .hybrids import load_dV
+from .hybrids import load_dV, load_dVS
 
 GEV2KEV = 1e6
 
@@ -36,9 +36,9 @@ FINAL = {
 }
 
 
-def table(kappa_Q, kappa_H, variants=('A-NL', 'B-NL')):
+def table(kappa_Q, kappa_H, variants=('A-NL', 'B-NL'), sigma_mode='EST'):
     lib = Library('c', mix=True)
-    dV = load_dV('c')
+    dV = load_dV('c'); dVS = load_dVS('c')
     from .hybrids import VARIANTS
     rows = []
     for (idx, content, cand, Mi) in INITIAL:
@@ -53,18 +53,19 @@ def table(kappa_Q, kappa_H, variants=('A-NL', 'B-NL')):
             row = {'state': cand, 'content': content, 'P_Q': wQ, 'final': fname, 'k_MeV': 1e3 * E}
             for v in variants:
                 gap, nl = VARIANTS[v]
-                P = Params('c', kappa_Q=kappa_Q, kH=(kappa_H,) * 3, nonloc=nl, gap=gap, dV=dV)
+                P = Params('c', kappa_Q=kappa_Q, kH=(kappa_H,) * 4, nonloc=nl, gap=gap, dV=dV,
+                       dVS=dVS, sigma_mode=sigma_mode)
                 row[v] = width(f, st, E, P, lib.r) * GEV2KEV
             rows.append(row)
     return rows
 
 
-def hindered_psi2S_etac(kappa_H, variants=('A-NL', 'B-NL')):
+def hindered_psi2S_etac(kappa_H, variants=('A-NL', 'B-NL'), sigma_mode='EST'):
     """psi(2S) -> gamma eta_c(1S) through the hybrid admixtures: the two paths
     (spin-0 hybrid component of psi(2S) -> eta_c; psi(2S) -> spin-1 hybrid
     component of eta_c) and their coherent sum."""
     lib = Library('c', mix=True)
-    dV = load_dV('c')
+    dV = load_dV('c'); dVS = load_dVS('c')
     from .hybrids import VARIANTS
     out = []
     for (iname, idx, Mi, fname, kf, Mf) in [('psi(2S)', 2, 3.686097, 'eta_c(1S)', 0, 2.98409),
@@ -76,10 +77,39 @@ def hindered_psi2S_etac(kappa_H, variants=('A-NL', 'B-NL')):
             return State(s.name, s.J, [c for c in s.comps if (c.kind, c.S) in keep])
         for v in variants:
             gap, nl = VARIANTS[v]
-            P = Params('c', kappa_Q=1.0, kH=(kappa_H,) * 3, nonloc=nl, gap=gap, dV=dV)
+            P = Params('c', kappa_Q=1.0, kH=(kappa_H,) * 4, nonloc=nl, gap=gap, dV=dV,
+                       dVS=dVS, sigma_mode=sigma_mode)
             g1 = width(sub(f, {('Q', 0)}), sub(st, {('H', 0)}), E, P, lib.r) * GEV2KEV
             g2 = width(sub(f, {('H', 1)}), sub(st, {('Q', 1)}), E, P, lib.r) * GEV2KEV
             gc = width(f, st, E, P, lib.r) * GEV2KEV
             out.append({'transition': f'{iname}->gamma {fname}', 'variant': v, 'k_MeV': 1e3 * E,
                         'path_H_to_Q': g1, 'path_Q_to_H': g2, 'coherent': gc})
+    return out
+
+
+# experimental gamma eta_c(1S) widths/limits (keV) used with the scan
+# (RPP 2026: B x Gamma_tot; 90% CL limit for psi(3770))
+GAMMA_ETAC_EXP = {'J/psi': (1.31, 0.33), 'psi(2S)': (1.05, 0.15), 'psi(3770)': ('UL', 21.8)}
+
+
+def sigma_scan(kappa, ts, variants=('B-NL', 'A-NL'), sigma_mode='EST'):
+    """Gamma(V -> gamma eta_c(1S)) of the mixed 1-- states for c1 = c2 = c3 = kappa e e_c
+    and c4 = t kappa e e_c (t = ts), to locate the Sigma_u^- coupling allowed by data."""
+    lib = Library('c', mix=True)
+    dV = load_dV('c'); dVS = load_dVS('c')
+    from .hybrids import VARIANTS
+    f = lib.mixed('MixS0J0', 0, 0)
+    states = [('J/psi', 0, 3.096900), ('psi(2S)', 2, 3.686097), ('psi(3770)', 3, 3.7737),
+              ('psi(4040)', 5, 4.040), ('psi(4415)', 10, 4.415)]
+    out = []
+    for t in ts:
+        for (name, idx, Mi) in states:
+            st = lib.mixed('MixJ1', idx, 1)
+            E = photon_energy(Mi, 2.98409)
+            for v in variants:
+                gap, nl = VARIANTS[v]
+                P = Params('c', kH=(kappa, kappa, kappa, t * kappa), nonloc=nl, gap=gap, dV=dV, dVS=dVS,
+                           sigma_mode=sigma_mode)
+                out.append({'c4_over_c': float(t), 'state': name + ' (mixed)', 'variant': v,
+                            'Gamma_keV': width(f, st, E, P, lib.r) * GEV2KEV})
     return out

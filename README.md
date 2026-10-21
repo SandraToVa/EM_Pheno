@@ -1,3 +1,28 @@
+# EM transitions — phenomenology code, version 2 (Σu⁻)
+
+**EM_Pheno_v2** = EM_Pheno + the Σu⁻ component of the hybrid vertex of the v10
+notes (Sec. "Hybrids: the Σu⁻ component", Eqs. eq:gSigma, eq:rhoSigma,
+eq:Lfull, eq:Gfull) + comparison with lattice QCD (arXiv:2301.08213).
+EM_Pheno (v1) is kept unchanged; `sigma_mode='off'` in v2 reproduces it.
+
+What is new in v2:
+
+* `emlib/amplitudes.py`: longitudinal vertex h (r̂·ε*)(r̂·ψ)(g_B∥ + E g_E^Σ),
+  g_B∥ = 4c4/(σr), g_E^Σ = −4c3/(3πσ); non-local form factors of the Σ
+  densities (f, F3 = 9π²cos(x/2)/(9π²−x²)); couplings kH = (c1,c2,c3,c4);
+  `sigma_mode` = 'EST' (notes) | 'norm' (g_B∥ rescaled to g_B⊥, r→0 condition)
+  | 'off'; variant B uses dVS = V_Σu − V_Σg for the Σ gap.
+* `matlab/exportWavefunctions.m`: also exports `dVSig` (wave functions identical).
+* `emlib/hybrids.py`: 4×4 quadratic forms, p0 predictions, Σ-mode columns.
+* `emlib/mixing.py`: Σ modes, `sigma_scan` (c4 scan of V → γη_c).
+* `emlib/lattice.py`: charge radii, Γ(χc0→J/ψγ), SHO β² vs lattice.
+* `python/r_moments.py`: sizes, Σ/Π weights, counting parameters.
+* `tests/test_engine.py`: tests 10–14 (Σ vertex vs Eq. eq:Gfull, p0 width,
+  non-local Σ, FT of ρ_Σ, spin-1 with Σ). 193 checks, ALL PASS.
+* `make_tables.py` writes to `$EMPHENO_TEX` if set.
+
+----
+
 # EM transitions — phenomenology code
 
 Phenomenology of one-photon transitions in the BOEFT (quarkonium E1 and
@@ -9,7 +34,8 @@ folder is only *read* (added to the MATLAB path); nothing there is modified.
 ```
 matlab/exportWavefunctions.m   QQbarSpectrum  ->  data/wf_*.mat   (MATLAB or Octave)
 python/run_all.py              fits + predictions -> results/*.csv, results/summary.json
-python/make_tables.py          results -> ../TeX file/tex_pheno/tab_*.tex (or tex/ if absent)
+python/make_tables.py          results -> ../TeX file/tex_pheno/tab_*.tex (or $EMPHENO_TEX, or tex/)
+python/r_moments.py            sizes, Σ/Π weights -> results/r_moments_*.csv
 python/figures.py              results -> figures/*.pdf|png
 tests/test_engine.py           checks of the amplitude engine (must print ALL PASS)
 ../TeX file/tex_pheno/sec_pheno.tex         the phenomenology section (\input in mainEM.tex)
