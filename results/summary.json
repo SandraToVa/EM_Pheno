@@ -35,6 +35,31 @@
    "sigma_per_B_pb": 2384.685093581104
   }
  },
+ "c4_range_at_kappa_c": {
+  "A-NL": [
+   -0.04017036887841468,
+   0.03943110638213584
+  ],
+  "B-NL": [
+   0.8093837218065063,
+   0.9603991734122075
+  ],
+  "A-L": [
+   -0.038760417247531084,
+   0.03474831275590406
+  ],
+  "B-L": [
+   0.8340329579038143,
+   0.8854727552239025
+  ]
+ },
+ "c4_window_mixed_states": {
+  "A-NL": null,
+  "B-NL": [
+   0.075,
+   0.2
+  ]
+ },
  "lattice": {
   "chic0_Jpsi": {
    "Gamma_LO_local_keV": 203.2264491757986,
@@ -99,5 +124,151 @@
     "pull": -0.6033932192025342
    }
   ]
- }
+ },
+ "lattice_channel_solutions": [
+  {
+   "variant": "A-NL",
+   "Y_dataset": "quenched",
+   "etac1_dataset": "quenched",
+   "kappa_Pi": 0.4595,
+   "kappa_Sigma": 0.0068,
+   "kSigma_over_kPi": 0.014798694232861806
+  },
+  {
+   "variant": "A-NL",
+   "Y_dataset": "Nf3",
+   "etac1_dataset": "Nf3",
+   "kappa_Pi": 0.571,
+   "kappa_Sigma": -0.0089,
+   "kSigma_over_kPi": -0.015586690017513135
+  },
+  {
+   "variant": "A-NL",
+   "Y_dataset": "Nf3-F0",
+   "etac1_dataset": "Nf3",
+   "kappa_Pi": 0.9366,
+   "kappa_Sigma": -0.0576,
+   "kSigma_over_kPi": -0.06149903907751441
+  },
+  {
+   "variant": "A-L",
+   "Y_dataset": "quenched",
+   "etac1_dataset": "quenched",
+   "kappa_Pi": 0.3933,
+   "kappa_Sigma": 0.0182,
+   "kSigma_over_kPi": 0.046275108060005087
+  },
+  {
+   "variant": "A-L",
+   "Y_dataset": "Nf3",
+   "etac1_dataset": "Nf3",
+   "kappa_Pi": 0.4935,
+   "kappa_Sigma": 0.0047,
+   "kSigma_over_kPi": 0.009523809523809525
+  },
+  {
+   "variant": "A-L",
+   "Y_dataset": "Nf3-F0",
+   "etac1_dataset": "Nf3",
+   "kappa_Pi": 0.8083,
+   "kappa_Sigma": -0.0348,
+   "kSigma_over_kPi": -0.04305332178646542
+  },
+  {
+   "variant": "B-NL",
+   "Y_dataset": "quenched",
+   "etac1_dataset": "quenched",
+   "kappa_Pi": 0.217,
+   "kappa_Sigma": -0.7812,
+   "kSigma_over_kPi": -3.6
+  },
+  {
+   "variant": "B-NL",
+   "Y_dataset": "quenched",
+   "etac1_dataset": "quenched",
+   "kappa_Pi": 0.0422,
+   "kappa_Sigma": 1.4248,
+   "kSigma_over_kPi": 33.76303317535545
+  },
+  {
+   "variant": "B-NL",
+   "Y_dataset": "Nf3",
+   "etac1_dataset": "Nf3",
+   "kappa_Pi": 0.1843,
+   "kappa_Sigma": -0.8604,
+   "kSigma_over_kPi": -4.668475311991319
+  },
+  {
+   "variant": "B-NL",
+   "Y_dataset": "Nf3",
+   "etac1_dataset": "Nf3",
+   "kappa_Pi": 0.4144,
+   "kappa_Sigma": 2.7069,
+   "kSigma_over_kPi": 6.532094594594595
+  },
+  {
+   "variant": "B-NL",
+   "Y_dataset": "Nf3-F0",
+   "etac1_dataset": "Nf3",
+   "kappa_Pi": 0.0981,
+   "kappa_Sigma": -1.1264,
+   "kSigma_over_kPi": -11.482161060142712
+  },
+  {
+   "variant": "B-NL",
+   "Y_dataset": "Nf3-F0",
+   "etac1_dataset": "Nf3",
+   "kappa_Pi": 0.3282,
+   "kappa_Sigma": 2.4409,
+   "kSigma_over_kPi": 7.437233394271786
+  },
+  {
+   "variant": "B-L",
+   "Y_dataset": "quenched",
+   "etac1_dataset": "quenched",
+   "kappa_Pi": 0.1877,
+   "kappa_Sigma": -0.7781,
+   "kSigma_over_kPi": -4.145444858817261
+  },
+  {
+   "variant": "B-L",
+   "Y_dataset": "quenched",
+   "etac1_dataset": "quenched",
+   "kappa_Pi": 0.0287,
+   "kappa_Sigma": 1.4074,
+   "kSigma_over_kPi": 49.038327526132406
+  },
+  {
+   "variant": "B-L",
+   "Y_dataset": "Nf3",
+   "etac1_dataset": "Nf3",
+   "kappa_Pi": 0.1607,
+   "kappa_Sigma": -0.8548,
+   "kSigma_over_kPi": -5.319228375855631
+  },
+  {
+   "variant": "B-L",
+   "Y_dataset": "Nf3",
+   "etac1_dataset": "Nf3",
+   "kappa_Pi": 0.3404,
+   "kappa_Sigma": 2.6704,
+   "kSigma_over_kPi": 7.844888366627497
+  },
+  {
+   "variant": "B-L",
+   "Y_dataset": "Nf3-F0",
+   "etac1_dataset": "Nf3",
+   "kappa_Pi": 0.0885,
+   "kappa_Sigma": -1.1163,
+   "kSigma_over_kPi": -12.6135593220339
+  },
+  {
+   "variant": "B-L",
+   "Y_dataset": "Nf3-F0",
+   "etac1_dataset": "Nf3",
+   "kappa_Pi": 0.2682,
+   "kappa_Sigma": 2.4089,
+   "kSigma_over_kPi": 8.98173005219985
+  }
+ ]
 }

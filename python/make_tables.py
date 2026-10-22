@@ -75,30 +75,40 @@ fin_tex = lambda s: '$' + s.replace('eta_c2', r'\eta_{c2}').replace('eta_b2', r'
     .replace('eta_b', r'\eta_b').replace('h_c3', 'h_{c3}').replace('h_b3', 'h_{b3}') + '$'
 cand_tex = lambda s: '$' + s.replace('Upsilon', '@U@').replace('psi', r'\psi').replace('@U@', r'\Upsilon').replace('chi_c1', r'\chi_{c1}')\
     .replace('chi_c0', r'\chi_{c0}') + '$' if s != '-' else '--'
-rows = []
-cols = ['A-NL_off', 'A-NL', 'A-NL_norm', 'B-NL_off', 'B-NL', 'B-NL_norm']
 hyb_tex = lambda s: '$' + s.replace('(s/d)', '(s/d)_').replace('(p/f)2', '(p/f)_2').replace('p1', 'p_1')\
     .replace('d2', 'd_2').replace('p0', 'p_0') + '$'
+SPLIT = ('Pi', 'Sigma', 'int')
+def fsplit(r, v):
+    """Gamma_PiPi, Gamma_SigmaSigma, Gamma_int, Gamma for variant v (keV); '--' for an absent channel"""
+    out = []
+    for X in SPLIT:
+        x = r[f'{v}_{X}']
+        out.append('--' if abs(x) < 1e-6 * max(abs(r[v]), 1e-12) and abs(x) < 1e-9 else fmt(x))
+    return out + [fmt(r[v])]
+cols = ['A-NL', 'B-NL']
+rows = []
 for fl in ('c', 'b'):
     d = hp[hp['flavor'] == fl]
     last = None
     for _, r in d.iterrows():
-        if max(r[c] for c in cols) < 0.5:
+        if max(max(abs(r[c]), abs(r[c + '_Pi']), abs(r[c + '_Sigma'])) for c in cols) < 0.5:
             continue
         if r['hybrid'] != last:
             m = f"{r['M_i']:.3f}" + ('' if r['M_i_src'] == 'exp' else '$^*$')
             gt = '--' if np.isnan(r['Gtot_MeV']) else f"{r['Gtot_MeV']:.0f}"
             head = (f"{hyb_tex(r['hybrid'])} & "
-                    f"{r['JPC'].replace('--', '$^{--}$').replace('++', '$^{++}$')} & {cand_tex(r['candidate'])} & {m} & {gt}")
+                    f"{r['JPC'].replace('--', '$^{--}$').replace('++', '$^{++}$')} & {cand_tex(r['candidate'])} & {m} & {gt} & "
+                    f"{100 * r['P_Sigma']:.0f}")
             last = r['hybrid']
         else:
-            head = ' & & & & '
+            head = ' & & & & & '
         br = '--'
         if not np.isnan(r['Gtot_MeV']):
             x = r['B-NL'] / (r['Gtot_MeV'] * 1e3)
             mant, ex = f"{x:.1e}".split('e')
             br = f"${mant}\\times10^{{{int(ex)}}}$"
-        rows.append(f"{head} & {fin_tex(r['final'])} & {r['k_MeV']:.0f} & " + ' & '.join(fmt(r[c]) for c in cols) + f" & {br} \\\\")
+        rows.append(f"{head} & {fin_tex(r['final'])} & {r['k_MeV']:.0f} & "
+                    + ' & '.join(sum((fsplit(r, c) for c in cols), [])) + f" & {br} \\\\")
     rows.append(r'\hline')
 with open(os.path.join(TEX, 'tab_hybrids.tex'), 'w') as f:
     f.write('\n'.join(rows[:-1]) + '\n\\hline\n')
@@ -106,12 +116,11 @@ with open(os.path.join(TEX, 'tab_hybrids.tex'), 'w') as f:
 # --------------------------------------------------------- Table: kappa_H constraints
 hc = pd.read_csv(os.path.join(RES, 'hybrid_kappa_constraints.csv'))
 rows = []
-for (cand, v), d in hc.groupby(['candidate', 'variant'], sort=False):
-    g = {r['sigma_mode']: r for _, r in d.iterrows()}
-    rows.append(f"{cand_tex(cand)} & {v} & {fmt(g['off']['Gamma_c2only_k1_keV'])} & "
-                + ' & '.join(fmt(g[m]['Gamma_k1_keV']) for m in ('off', 'EST', 'norm'))
-                + f" & {fmt(g['off']['Gamma_UL_keV'])} & "
-                + ' & '.join(f"{g[m]['kappa_H_max']:.2f}" for m in ('off', 'EST', 'norm')) + ' \\\\')
+for _, g in hc.iterrows():
+    rows.append(f"{cand_tex(g['candidate'])} & {g['variant']} & {fmt(g['Gamma_mag_k1_keV'])} & "
+                + ' & '.join(fmt(g[k]) for k in ('Gamma_k1_Pi_keV', 'Gamma_k1_Sigma_keV', 'Gamma_k1_int_keV', 'Gamma_k1_keV'))
+                + f" & {fmt(g['Gamma_UL_keV'])} & "
+                + ' & '.join(f"{g[k]:.2f}" for k in ('kappa_H_max', 'kappa_Pi_max', 'kappa_Sigma_max')) + ' \\\\')
 with open(os.path.join(TEX, 'tab_kappaH.tex'), 'w') as f:
     f.write('\n'.join(rows) + '\n\\hline\n')
 
@@ -121,14 +130,15 @@ mtex = lambda s: '$' + s.replace('eta_c', r'\eta_c').replace('chi_c', r'\chi_{c'
     .replace('(2P)=X(3872)', '}(2P)=X(3872)').replace('(2P)', '}(2P)').replace('}}', '}') + '$'
 rows = []
 last = None
+dash = lambda x, ref: '--' if abs(x) < 1e-6 * max(abs(ref), 1e-12) else fmt(x)
 for _, r in mx.iterrows():
     if r['state'] in ('psi(2S)', 'psi(3770)'):
         continue
     cont = r['content'].replace('psi(3S)', '$\\psi(3S)$').replace('psi(2D)', '$\\psi(2D)$').replace('(s/d)1 hybrid', '$(s/d)_1$ hybrid')
     head = f"{cand_tex(r['state'])} & {cont} & {r['P_Q']:.3f}" if r['state'] != last else ' & & '
     last = r['state']
-    rows.append(f"{head} & {mtex(r['final'])} & {r['k_MeV']:.0f} & {fmt(r['A-NL'])} & {fmt(r['B-NL_off'])} & "
-                f"{fmt(r['B-NL'])} & {fmt(r['B-NL_norm'])} \\\\")
+    rows.append(f"{head} & {mtex(r['final'])} & {r['k_MeV']:.0f} & {fmt(r['A-NL'])} & {fmt(r['B-NL'])} & "
+                + ' & '.join(dash(r['B-NL_' + X], r['B-NL']) for X in ('E1', 'Pi', 'Sigma', 'int')) + ' \\\\')
 with open(os.path.join(TEX, 'tab_mixing.tex'), 'w') as f:
     f.write('\n'.join(rows) + '\n\\hline\n')
 # --------------------------------------------------------- Table: hindered (hybrid admixtures)
@@ -136,7 +146,8 @@ hd = pd.read_csv(os.path.join(RES, 'mixing_hindered.csv'))
 rows = []
 for _, r in hd.iterrows():
     tr = r['transition'].replace('psi(2S)', r'$\psi(2S)$').replace('J/psi', r'$J/\psi$').replace('->gamma eta_c(1S)', r'$\to\gamma\eta_c(1S)$')
-    rows.append(f"{tr} & {r['variant']} & {r['sigma_mode']} & {fmt(r['path_H_to_Q'])} & {fmt(r['path_Q_to_H'])} & {fmt(r['coherent'])} \\\\")
+    rows.append(f"{tr} & {r['variant']} & {fmt(r['path_H_to_Q'])} & {fmt(r['path_Q_to_H'])} & "
+                + ' & '.join(fmt(r[k]) for k in ('coherent_Pi', 'coherent_Sigma', 'coherent_int', 'coherent')) + ' \\\\')
 with open(os.path.join(TEX, 'tab_hindered.tex'), 'w') as f:
     f.write('\n'.join(rows) + '\n\\hline\n')
 
@@ -161,29 +172,41 @@ with open(os.path.join(TEX, 'tab_lattice_chic0.tex'), 'w') as f:
 lh = pd.read_csv(os.path.join(RES, 'lattice_hybrids.csv'))
 chtex = {'Y->eta_c': r'$Y(1^{--})\to\gamma\eta_c$', 'eta_c1->J/psi': r'$\eta_{c1}(1^{-+})\to\gamma J/\psi$',
          'H1(0-+)->J/psi': r'$H_1(0^{-+})\to\gamma J/\psi$', 'H1(2-+)->J/psi': r'$H_1(2^{-+})\to\gamma J/\psi$'}
-dstex = {'quenched': r'quenched~\cite{Dudek:2009kk}', 'Nf3': r'$N_f{=}2{+}1$~\cite{Delaney:2023thesis}',
+dstex = {'quenched': r'quenched~\cite{Dudek:2009kk}', 'Nf3': r'$N_f{=}2{+}1$, quoted~\cite{Delaney:2023thesis}',
          'Nf3-F0': r'$N_f{=}2{+}1$, from $F(0)$', 'JS-kin': '--'}
-cols = [(v, m) for v in ('A-NL', 'B-NL') for m in ('off', 'EST', 'norm')]
+k2 = summ['kappa_c'][0] ** 2
 rows = []
 for (ch, ds), d in lh.groupby(['channel', 'dataset'], sort=False):
-    g = {(r['variant'], r['sigma_mode']): r for _, r in d.iterrows()}
+    g = {r['variant']: r for _, r in d.iterrows()}
     r0 = d.iloc[0]
     lat = '--' if np.isnan(r0['lat_keV']) else f"{r0['lat_keV']:g}({r0['dlat_keV']:g})"
-    js = '--' if (np.isnan(r0['JS_keV']) or ds == 'Nf3' or ds == 'Nf3-F0') else f"{r0['JS_keV']:.0f}"
-    rows.append(f"{chtex[ch]} & {dstex[ds]} & {r0['M_i']:.3f} & {r0['E_q']*1e3:.0f} & {lat} & {js} & "
-                + ' & '.join(fmt(g[c]['Gamma_kappac_keV']) for c in cols) + ' \\\\')
+    js = '--' if (np.isnan(r0['JS_keV']) or ds in ('Nf3', 'Nf3-F0')) else f"{r0['JS_keV']:.0f}"
+    vals = []
+    for v in ('A-NL', 'B-NL'):
+        vals += [fmt(k2 * g[v][k]) for k in ('Gamma_k1_Pi_keV', 'Gamma_k1_Sigma_keV', 'Gamma_k1_int_keV', 'Gamma_k1_keV')]
+    rows.append(f"{chtex[ch]} & {dstex[ds]} & {r0['M_i']:.3f} & {r0['E_q']*1e3:.0f} & {lat} & {js} & " + ' & '.join(vals) + ' \\\\')
 with open(os.path.join(TEX, 'tab_lattice_hybrids.tex'), 'w') as f:
     f.write('\n'.join(rows) + '\n\\hline\n')
 rows = []
-def pick(ch, ds, v, m):
-    return lh[(lh['channel'] == ch) & (lh['dataset'] == ds) & (lh['variant'] == v) & (lh['sigma_mode'] == m)].iloc[0]
+def pick(ch, ds, v):
+    return lh[(lh['channel'] == ch) & (lh['dataset'] == ds) & (lh['variant'] == v)].iloc[0]
+def R(a, b, k='Gamma_k1_keV'):
+    return a[k] / b[k]
 for v in ('A-NL', 'A-L', 'B-NL', 'B-L'):
-    for m in ('off', 'EST', 'norm'):
-        yq, eq_ = pick('Y->eta_c', 'quenched', v, m), pick('eta_c1->J/psi', 'quenched', v, m)
-        yu, yf, eu = pick('Y->eta_c', 'Nf3', v, m), pick('Y->eta_c', 'Nf3-F0', v, m), pick('eta_c1->J/psi', 'Nf3', v, m)
-        rows.append(f"{v} & {m} & {yq['kappaH']:.2f} & {eq_['kappaH']:.2f} & {eq_['Gamma_k1_keV']/yq['Gamma_k1_keV']:.2f} & "
-                    f"{yu['kappaH']:.2f} ({yf['kappaH']:.2f}) & {eu['kappaH']:.2f} & {eu['Gamma_k1_keV']/yu['Gamma_k1_keV']:.2f} \\\\")
+    yq, eq_ = pick('Y->eta_c', 'quenched', v), pick('eta_c1->J/psi', 'quenched', v)
+    yu, yf, eu = pick('Y->eta_c', 'Nf3', v), pick('Y->eta_c', 'Nf3-F0', v), pick('eta_c1->J/psi', 'Nf3', v)
+    rows.append(f"{v} & {yq['kappaH']:.2f} & {eq_['kappaH']:.2f} & {R(eq_, yq):.2f} & "
+                f"{yu['kappaH']:.2f} ({yf['kappaH']:.2f}) & {eu['kappaH']:.2f} & {R(eu, yu):.2f} & "
+                f"{R(eu, yu, 'Gamma_k1_Pi_keV'):.2f} & {R(eu, yu, 'Gamma_k1_Sigma_keV'):.2f} \\\\")
 with open(os.path.join(TEX, 'tab_lattice_kappaH.tex'), 'w') as f:
+    f.write('\n'.join(rows) + '\n\\hline\n')
+ls_ = pd.read_csv(os.path.join(RES, 'lattice_channel_solutions.csv'))
+dsn = {'quenched': 'quenched', 'Nf3': r'$N_f{=}2{+}1$, quoted', 'Nf3-F0': r'$N_f{=}2{+}1$, $Y$ from $F(0)$'}
+rows = []
+for (v, ds), d in ls_.groupby(['variant', 'Y_dataset'], sort=False):
+    sol = '; '.join(f"$({r['kappa_Pi']:.2f},\\,{r['kappa_Sigma']:+.2f})$" for _, r in d.iterrows())
+    rows.append(f"{v} & {dsn[ds]} & {sol} \\\\")
+with open(os.path.join(TEX, 'tab_lattice_channels.tex'), 'w') as f:
     f.write('\n'.join(rows) + '\n\\hline\n')
 print('tables written to', TEX)
 print(open(os.path.join(TEX, 'tab_mixing.tex')).read()[:1500])

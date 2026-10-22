@@ -32,9 +32,9 @@ function exportWavefunctions(qqbarPath, outDir, opts)
 % Channel content of each family (see the potentialMatrix of each file):
 %   mix = false
 %     Ql<l>    : quarkonium, orbital l = 0,1,2,3 from QQbarS0J<l>
-%     Hjc0     : hybrid Jcal = 0, 1 channel  [l=1, Sigma_u only]       (p0)
-%     Hjc1     : hybrid Jcal = 1, 3 channels [l=1 Pi (p1); l=2; l=0]   (s/d)1
-%     Hjc2     : hybrid Jcal = 2, 3 channels [l=2 Pi (d2); l=3; l=1]   (p/f)2
+%     Hj0      : hybrid J = 0 (S = 0, so Jcal = J), 1 channel  [l=1, Sigma_u only]       (p0)
+%     Hj1      : hybrid J = 1 (S = 0), 3 channels [l=1 Pi (p1); l=2; l=0]   (s/d)1
+%     Hj2      : hybrid J = 2 (S = 0), 3 channels [l=2 Pi (d2); l=3; l=1]   (p/f)2
 %   mix = true (charm only, cF = 0 for other masses)
 %     MixJ1    : GQQbarS0Jcal1 = QQbarS1J1, 6 channels
 %                [Q(l=1,S=1); H(l=1,S=0); Q(l=2,S=1); Q(l=0,S=1); H(l=2,S=0); H(l=0,S=0)]
@@ -64,9 +64,10 @@ for f = 1:size(masses,1)
     S = struct();
     S.r = mesh.r; S.h = mesh.h; S.lambda = mesh.lambda; S.m = m;
     S.N = opts.N; S.rmax = opts.rmax;
-    % quarkonium l = 0,1,2,3 and hybrids Jcal = 0,1,2
+    % quarkonium l = 0,1,2,3 and S = 0 hybrids J = 0,1,2 (Jcal = J); the S = 1
+    % hybrids are built in Python by coupling J with S = 1 (older exports: Hjc0..2)
     fams = {'Ql0', @QQbarS0J0; 'Ql1', @QQbarS0J1; 'Ql2', @QQbarS0J2; 'Ql3', @QQbarS0J3; ...
-            'Hjc0', @GQQbarS0Jcal0; 'Hjc1', @GQQbarS0Jcal1; 'Hjc2', @GQQbarS0Jcal2};
+            'Hj0', @GQQbarS0Jcal0; 'Hj1', @GQQbarS0Jcal1; 'Hj2', @GQQbarS0Jcal2};
     for k = 1:size(fams,1)
         [~,~,~,inf0] = fams{k,2}(m, 'potential');
         [E, C] = solveFamily(inf0.V, m, opts.nstates, sopts);

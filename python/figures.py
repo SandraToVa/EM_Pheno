@@ -6,7 +6,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import pandas as pd
 sys.path.insert(0, os.path.dirname(__file__))
-from emlib.states import Library
+from emlib.states import Library, pi_sigma_projections
 from emlib import hybrids as HY
 from emlib.amplitudes import photon_energy
 
@@ -51,9 +51,8 @@ lib = Library('c'); r = lib.r; dV = HY.load_dV('c'); dVS = HY.load_dVS('c')
 sig = 0.21
 h = [x for x in HY.HYBRIDS['c'] if x[0] == '1(s/d)1'][0]
 st = HY.hybrid_state(lib, h)
-comps = {c.l: c.c for c in st.comps}
-cPi = (np.sqrt(2) * comps[0] + comps[2]) / np.sqrt(3)
-cSig = (comps[0] - np.sqrt(2) * comps[2]) / np.sqrt(3)
+pr = pi_sigma_projections(st)
+cPi, cSig = pr['R_Pi'], pr['R_Sigma']          # Eqs. (eq:lab_RPi), (eq:lab_RSigma), J = 1
 f = lib.quarkonium(1, 0)
 E = photon_energy(4.040, 2.98409)
 uPi = lib.u(cPi); uSig = lib.u(cSig); uf = lib.u(f.comps[0].c)
@@ -65,7 +64,7 @@ ax.plot(r, base, color=MUTED, lw=1.2, ls='--', label=r'$u_{\eta_c}u_\Pi$ ($g_{B\
 ax.plot(r, base * (1 - E * r / np.pi), color=C1, lw=2, label=r'$\times(1-E_q r/\pi)$  [A]')
 ax.plot(r, base * np.sqrt(dV * r / np.pi) * (1 - E / dV), color=C2, lw=2, label=r'$\times\sqrt{\Delta V r/\pi}\,(1-E_q/\Delta V)$  [B]')
 ax.set_xlim(0, 12); ax.set_xlabel(r'$r$ (GeV$^{-1}$)'); ax.set_ylabel('radial integrand (GeV)')
-ax.set_title(r'$\Pi_u$: $\sqrt{2/3}\,\mathcal{A}_1$', fontsize=9, color=INK)
+ax.set_title(r'$\Pi_u$ channel: $A_1$ ($p_0=\sqrt{2/3}$)', fontsize=9, color=INK)
 ax.grid(color=GRID, lw=0.5); ax.set_axisbelow(True)
 ax.legend(fontsize=7, loc='upper right')
 ax = axs[1]
@@ -73,12 +72,11 @@ w = 2 * np.sqrt(np.pi / sig) / r          # A_0 weight per unit c: (2 sqrt(pi)/s
 bS = uf * uSig * w
 ax.axhline(0, color=MUTED, lw=0.6)
 ax.plot(r, bS, color=MUTED, lw=1.2, ls='--', label=r'$u_{\eta_c}u_\Sigma\,\frac{2\sqrt{\pi}}{\sqrt{\sigma}\,r}$ ($g_{B\parallel}$ only)')
-ax.plot(r, bS * (1 - E * r / (3 * np.pi)), color=C1, lw=2, label=r'$\times(1-E_qr/3\pi)$  [A, EST]')
+ax.plot(r, bS * (1 - E * r / (3 * np.pi)), color=C1, lw=2, label=r'$\times(1-E_qr/3\pi)$  [A]')
 ax.plot(r, bS * np.sqrt(dVS * r / (3 * np.pi)) * (1 - E / dVS), color=C2, lw=2,
         label=r'$\times\sqrt{\Delta V_\Sigma r/(3\pi)}\,(1-E_q/\Delta V_\Sigma)$  [B]')
-ax.plot(r, uf * uSig * (1 - E * r / (3 * np.pi)), color=C3, lw=1.5, ls='-.', label=r'norm: $g_{B\parallel}\to g_{B\perp}$ [A]')
 ax.set_xlim(0, 12); ax.set_xlabel(r'$r$ (GeV$^{-1}$)')
-ax.set_title(r'$\Sigma_u^-$: $\sqrt{1/3}\,\mathcal{A}_0$', fontsize=9, color=INK)
+ax.set_title(r'$\Sigma_u^-$ channel: $A_0$ ($s_0=\sqrt{1/3}$)', fontsize=9, color=INK)
 ax.grid(color=GRID, lw=0.5); ax.set_axisbelow(True)
 ax.legend(fontsize=6.5, loc='upper right')
 fig.suptitle(r'$\psi(4040)\,[1(s/d)_1]\to\gamma\,\eta_c(1S)$, $E_q=918$ MeV', fontsize=9, color=INK)
@@ -118,8 +116,8 @@ for ax in axs:
 axs[1].legend(fontsize=7, loc='lower right')
 fig.tight_layout(); fig.savefig(os.path.join(FIG, 'fig_c2_c13_plane.pdf')); fig.savefig(os.path.join(FIG, 'fig_c2_c13_plane.png'), dpi=200)
 plt.close(fig)
-# ---------------------------------------------------------------- Fig. 4: Sigma coupling scan
-sc = pd.read_csv(os.path.join(RES, 'sigma_scan.csv'))
+# ---------------------------------------------------------------- Fig. 4: c4 scan
+sc = pd.read_csv(os.path.join(RES, 'c4_scan.csv'))
 fig, axs = plt.subplots(1, 2, figsize=(7.4, 3.2))
 cols = {'J/psi (mixed)': C3, 'psi(2S) (mixed)': C1, 'psi(3770) (mixed)': '#8a5cc2',
         'psi(4040) (mixed)': C2, 'psi(4415) (mixed)': INK,
@@ -142,14 +140,14 @@ for ax, kind in zip(axs, ('unmixed', 'mixed')):
     ax.grid(color=GRID, lw=0.5); ax.set_axisbelow(True)
     ax.legend(fontsize=7, loc='lower left' if kind == 'mixed' else 'upper right', ncol=2 if kind == 'mixed' else 1)
 axs[0].set_ylabel(r'$\Gamma(V\to\gamma\eta_c(1S))$ (keV)')
-fig.tight_layout(); fig.savefig(os.path.join(FIG, 'fig_sigma_scan.pdf')); fig.savefig(os.path.join(FIG, 'fig_sigma_scan.png'), dpi=200)
+fig.tight_layout(); fig.savefig(os.path.join(FIG, 'fig_c4_scan.pdf')); fig.savefig(os.path.join(FIG, 'fig_c4_scan.png'), dpi=200)
 plt.close(fig)
 
 # ---------------------------------------------------------------- Fig. 5: LEFs
 rr = np.linspace(0.3, 12, 400)
 fig, ax = plt.subplots(figsize=(4.6, 3.0))
 ax.plot(rr, 2 / np.sqrt(np.pi * sig) * np.ones_like(rr), color=C1, lw=2, label=r'$g_{B\perp}=2c/\sqrt{\pi\sigma}$')
-ax.plot(rr, 4 / (sig * rr), color=C2, lw=2, label=r'$g_{B\parallel}=4c/(\sigma r)$ (EST)')
+ax.plot(rr, 4 / (sig * rr), color=C2, lw=2, label=r'$g_{B\parallel}=4c/(\sigma r)$')
 ax.plot(rr, -3 * np.pi / rr * (-4 / (3 * np.pi * sig)) * np.ones_like(rr), color=C2, lw=0.8, ls=':')
 ax.axvline(2 * np.sqrt(np.pi / sig), color=MUTED, lw=0.6, ls='--')
 ax.text(2 * np.sqrt(np.pi / sig) + 0.2, 9, r'$r=2\sqrt{\pi/\sigma}$', fontsize=7.5, color=MUTED)
@@ -162,14 +160,14 @@ plt.close(fig)
 ge = pd.read_csv(os.path.join(RES, 'gamma_vs_Eq.csv'))
 kc = summ['kappa_c'][0]
 fig, axs = plt.subplots(1, 2, figsize=(7.4, 3.7), sharey=True)
-sty = {'off': ('-', C1), 'EST': ('-', C2), 'norm': ('--', C3)}
+sty = {'Gamma_k1_keV': ('-', INK, r'$\Gamma$ (both channels)'), 'Pi_keV': ('--', C1, r'$\Gamma_{\Pi\Pi}$'),
+       'Sigma_keV': ('--', C2, r'$\Gamma_{\Sigma\Sigma}$')}
 lhd = pd.read_csv(os.path.join(RES, 'lattice_hybrids.csv'))
-lhd = lhd[(lhd['variant'] == 'A-NL') & (lhd['sigma_mode'] == 'off')]
+lhd = lhd[lhd['variant'] == 'A-NL']
 for ax, v, ttl in zip(axs, ('A-NL', 'B-NL'), ('variant A (NL)', 'variant B (NL)')):
-    for m in ('off', 'EST', 'norm'):
-        d = ge[(ge['variant'] == v) & (ge['sigma_mode'] == m)]
-        ax.plot(d['E_q'], kc ** 2 * d['Gamma_k1_keV'], ls=sty[m][0], color=sty[m][1], lw=1.6,
-                label=r'$\Sigma_u^-$ ' + m)
+    d = ge[ge['variant'] == v]
+    for k, (ls, col, lab_) in sty.items():
+        ax.plot(d['E_q'], kc ** 2 * d[k], ls=ls, color=col, lw=1.6 if k == 'Gamma_k1_keV' else 1.2, label=lab_)
     mk = {'quenched': ('o', INK, 'quenched LQCD'), 'Nf3': ('*', '#8a5cc2', r'$N_f=2+1$ LQCD (thesis)'),
           'Nf3-F0': ('*', '#c9b3e6', r'$N_f=2+1$, from $F(0)$')}
     for ds, (mm, col, lab_) in mk.items():
@@ -187,5 +185,26 @@ axs[0].set_ylabel(r'$\Gamma(1(s/d)_1\to\gamma\,1S)$ (keV), $\kappa_H=\kappa_c$')
 hdl, lbl = axs[0].get_legend_handles_labels()
 fig.legend(hdl, lbl, fontsize=7, loc='lower center', ncol=5, frameon=False)
 fig.tight_layout(rect=(0, 0.12, 1, 1)); fig.savefig(os.path.join(FIG, 'fig_lattice_hybrids.pdf')); fig.savefig(os.path.join(FIG, 'fig_lattice_hybrids.png'), dpi=200)
+plt.close(fig)
+# ---------------------------------------------------------------- Fig. 7: channel plane
+cons = pd.read_csv(os.path.join(RES, 'hybrid_kappa_constraints.csv'))
+kP, kS = np.meshgrid(np.linspace(-1.5, 1.5, 601), np.linspace(-1.5, 1.5, 601))
+fig, axs = plt.subplots(1, 2, figsize=(6.6, 3.2), sharey=True)
+for ax, v, ttl in zip(axs, ('A-NL', 'B-NL'), (r'A: $\pi/r$, $3\pi/r$', r'B: $\Delta V$, $\Delta V_\Sigma$')):
+    allowed = np.ones_like(kP, dtype=bool)
+    for cand, col in (('psi(4040)', C1), ('psi(4415)', C2)):
+        g = cons[(cons['candidate'] == cand) & (cons['variant'] == v)].iloc[0]
+        G = kP ** 2 * g['Gamma_k1_Pi_keV'] + kS ** 2 * g['Gamma_k1_Sigma_keV'] + kP * kS * g['Gamma_k1_int_keV']
+        allowed &= G < g['Gamma_UL_keV']
+        ax.contour(kP, kS, G, levels=[g['Gamma_UL_keV']], colors=[col], linewidths=1.2)
+        ax.plot([], [], color=col, lw=1.2, label=cand.replace('psi', r'$\psi$') + r'$\to\gamma\eta_c$')
+    ax.contourf(kP, kS, allowed.astype(float), levels=[0.5, 1.5], colors=[C3], alpha=0.25)
+    ax.plot([-1.5, 1.5], [-1.5, 1.5], color=MUTED, lw=0.8, ls='--', label=r'$\kappa_\Pi=\kappa_\Sigma$')
+    ax.plot([kc], [kc], 'o', color=INK, ms=4, label=r'$\kappa_\Pi=\kappa_\Sigma=\kappa_c$')
+    ax.set_title(ttl, fontsize=9, color=INK); ax.set_xlabel(r'$\kappa_\Pi$')
+    ax.grid(color=GRID, lw=0.5); ax.set_axisbelow(True); ax.set_xlim(-1.5, 1.5); ax.set_ylim(-1.5, 1.5)
+axs[0].set_ylabel(r'$\kappa_\Sigma$')
+axs[1].legend(fontsize=7, loc='lower right')
+fig.tight_layout(); fig.savefig(os.path.join(FIG, 'fig_channel_plane.pdf')); fig.savefig(os.path.join(FIG, 'fig_channel_plane.png'), dpi=200)
 plt.close(fig)
 print('figures written to', FIG)

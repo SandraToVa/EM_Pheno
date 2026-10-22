@@ -1,7 +1,16 @@
-"""Consistency tests of the generic amplitude engine against the closed
+"""Consistency tests of the amplitude engine (EM_Pheno v3) against the closed
 formulas of the notes and standard results.
-Tests 1-9: as in EM_Pheno v1 (pure Pi_u vertex: sigma_mode='off').
-Tests 10-13: Sigma_u^- vertex of the v10 notes (Eqs. eq:Gfull, eq:gSigma, eq:rhoSigma)."""
+  1-3   Clebsch-Gordan, quarkonium E1 (spin 0 and 1)
+  4     hybrid widths vs the lab-basis formula Eq. (eq:lab_Gamma_c), channel by
+        channel: Gamma_PiPi, Gamma_SigmaSigma, Gamma_int, for every hybrid type
+        and general c1..c4 (R_Pi, R_Sigma of Eqs. (eq:lab_RPi), (eq:lab_RSigma))
+  5-7   local limit of the non-local forms, spin-1 sum rule, gap variant B -> A
+  8     non-local widths vs the multipole formulas (E1, Pi channel)
+  9     spin-1 hybrids (Pi channel), 6j recoupling
+  10    selection rules of the two channels: l = J states have no Sigma channel,
+        J = 0 states no Pi channel
+  11-13 p0 (pure Sigma channel): local and non-local closed formulas, FT of rho_Sigma
+  14    spin-1 hybrids with both channels"""
 import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'python'))
 import numpy as np
@@ -9,6 +18,8 @@ from sympy.physics.quantum.cg import CG
 from sympy.physics.wigner import wigner_6j
 from sympy import S as Sy
 from emlib import Library, Params, width, cg, E_CHARGE, CHARGE
+from emlib.amplitudes import width_split
+from emlib.states import pi_sigma_projections
 
 ok = True
 def check(name, a, b, tol=1e-6):
@@ -56,36 +67,54 @@ for (nf, lf, ni, li) in [(1, 1, 2, 0), (1, 0, 1, 1), (1, 1, 1, 2)]:
     for Ji, s in tot.items():
         check(f"  sum rule J_i={Ji}", s, G0, 1e-8)
 
-# 4. hybrid -> quarkonium (spin 0) vs compact Eq. (140), with R_Pi^eff
+# 4. hybrid -> quarkonium (spin 0) vs the lab-basis formula, channel by channel:
+#    Gamma = 4E^3/(pi^2 sigma) [ (p A1 + s A0)^2/3 + (p2)^2 A2^2/5 ]          (eq:lab_Gamma_c)
+#    Gamma_PiPi = 4E^3/(pi^2 sigma)[p^2 A1^2/3 + (p2)^2 A2^2/5], Gamma_SigmaSigma = 4E^3/(pi^2 sigma) s^2 A0^2/3,
+#    Gamma_int = 4E^3/(pi^2 sigma) 2 p s A1 A0/3
 sig = P.sigma
+def pK(K, J, l):
+    """p^(K)_l of Eq. (eq:lab_p)"""
+    return np.sqrt(2 * (2 * l + 1) / (2 * J + 1)) * cg(l, 0, K, 1, J, 1) if l >= 0 else 0.0
 def wK(K, J, lp):
+    """(p^(K)_l')^2/2 = C(J -1 K 1|l' 0)^2 (weights of the multipole formulas)"""
     return cg(J, -1, K, 1, lp, 0) ** 2
-for (Jc, kind, n) in [(1, 'plus', 1), (1, 'minus', 1), (1, 'plus', 2), (2, 'plus', 1), (2, 'minus', 1)]:
-    k = lib.hybrid_index(Jc, kind, n)
-    H = lib.hybrid(Jc, k)
-    xi = -1 if kind == 'minus' else +1
-    eta = -xi * (-1) ** Jc
-    # effective Pi radial coefficients
-    comps = {cc.l: cc.c for cc in H.comps}
-    if xi == -1:
-        cPi = comps[Jc]
-    else:
-        cPi = (np.sqrt(Jc + 1) * comps[Jc - 1] + np.sqrt(Jc) * comps[Jc + 1]) / np.sqrt(2 * Jc + 1)
-    for kh in [(1, 1, 1), (0.7, 1.3, -0.4)]:
-        Ph = Params('c', kH=kh, sigma_mode='off')
-        c1, c2, c3 = [x * Ph.eeQ for x in kh]
-        for lf in range(0, 4):
-            if (-1) ** lf != eta or abs(lf - Jc) > 2:
-                continue
+def s_l(J, l):
+    """s_l of Eq. (eq:lab_rY)"""
+    return np.sqrt((2 * l + 1) / (2 * J + 1)) * cg(l, 0, 1, 0, J, 0) if l >= 0 else 0.0
+def RPi_RSigma(H, lf):
+    pr = pi_sigma_projections(H)
+    RPi = pr['R_Pi_lJ'] if (lf - pr['J']) % 2 == 0 else pr['R_Pi']
+    return RPi, pr['R_Sigma']
+def lab_split(H, J, f, lf, Eq, Ph):
+    c1, c2, c3, c4 = [x * Ph.eeQ for x in Ph.kH]
+    cPi, cSig = RPi_RSigma(H, lf); cf = f.comps[0].c
+    A1 = c2 * np.sum(cf * cPi) - Eq / (2 * np.pi) * (c1 + c3) * np.sum(cf * cPi * r)
+    A2 = Eq / (2 * np.pi) * (c1 - c3) * np.sum(cf * cPi * r)
+    A0 = 2 * np.sqrt(np.pi / sig) * (c4 * np.sum(cf * cSig / r) - c3 * Eq / (3 * np.pi) * np.sum(cf * cSig))
+    p, s, p2 = pK(1, J, lf), s_l(J, lf), pK(2, J, lf)
+    n = 4 * Eq ** 3 / (np.pi ** 2 * sig)
+    out = {'Pi': n * ((p * A1) ** 2 / 3 + (p2 * A2) ** 2 / 5), 'Sigma': n * (s * A0) ** 2 / 3,
+           'int': n * 2 * p * s * A1 * A0 / 3}
+    out['total'] = out['Pi'] + out['Sigma'] + out['int']
+    return out
+HTYPES = [(0, 'sigma', 1), (1, 'plus', 1), (1, 'plus', 2), (1, 'minus', 1), (2, 'plus', 1), (2, 'minus', 1)]
+for (J, kind, n) in HTYPES:
+    k = lib.hybrid_index(J, kind, n); H = lib.hybrid(J, k)
+    for kh in [(1, 1, 1, 1), (0.7, 1.3, -0.4, 0.55)]:
+        Ph = Params('c', kH=kh)
+        for lf in range(0, 5):
             for nf in (1, 2):
-                f = lib.quarkonium(nf, lf)
+                f = lib.quarkonium(nf, lf) if lf < 4 else None
+                if f is None:
+                    continue
                 Eq = 0.8
-                G = width(f, H, Eq, Ph, r)
-                I0 = np.sum(f.comps[0].c * cPi); I1 = np.sum(f.comps[0].c * cPi * r)
-                A1 = c2 * I0 - Eq / (2 * np.pi) * (c1 + c3) * I1
-                A2 = Eq / (2 * np.pi) * (c1 - c3) * I1
-                Gf = 8 * Eq ** 3 / (np.pi ** 2 * sig) * (wK(1, Jc, lf) / 3 * A1 ** 2 + wK(2, Jc, lf) / 5 * A2 ** 2)
-                check(f"HQ Jc={Jc} {kind}{n} -> {nf}{'SPDF'[lf]} c={kh}", G, Gf, 1e-7)
+                sp = width_split(f, H, Eq, Ph, r); ref = lab_split(H, J, f, lf, Eq, Ph)
+                if ref['total'] < 1e-20 and sp['total'] < 1e-20:
+                    continue              # parity forbidden: both are round-off
+                for X in ('total', 'Pi', 'Sigma', 'int'):
+                    if max(abs(ref[X]), abs(sp[X])) < 1e-13 * max(ref['total'], 1e-20):
+                        continue          # forbidden (parity) or channel absent: checked in test 10
+                    check(f"HQ {X:5s} J={J} {kind}{n} -> {nf}{'SPDF'[lf]} c={kh}", sp[X], ref[X], 1e-7)
 
 # 5. non-local -> local for small photon energy
 Pl = Params('c', nonloc=False); Pn = Params('c', nonloc=True)
@@ -96,14 +125,14 @@ H = lib.hybrid(1, lib.hybrid_index(1, 'plus', 1)); f = lib.quarkonium(1, 0)
 for Es in (0.9, 0.09, 0.009):
     print(f"  E={Es}: nonlocal/local HQ = {width(f, H, Es, Params('c', nonloc=True, kH=(0, 1, 0)), r) / width(f, H, Es, Params('c', kH=(0, 1, 0)), r):.6f}")
 
-# 6. spin-1 hybrid sum rule: sum_Jf Gamma(Jc,S=1,J -> lf,S=1,Jf) = spin-0 width
+# 6. spin-1 hybrid sum rule: Gamma(J, S=1, Jcal -> 1S, S=1, J'=1) = spin-0 width for every Jcal
 k = lib.hybrid_index(1, 'plus', 1)
 H0 = lib.hybrid(1, k); f0 = lib.quarkonium(1, 0)
 G0 = width(f0, H0, 0.9, P, r)
 for Ji in (0, 1, 2):
-    Hs = lib.hybrid(1, k, S=1, J=Ji)
+    Hs = lib.hybrid(1, k, S=1, Jcal=Ji)
     s = sum(width(lib.quarkonium(1, 0, S=1, J=1), Hs, 0.9, P, r) for _ in [0])
-    check(f"spin-1 (s/d)1 J={Ji} -> 1S(J=1) equals spin-0 width", s, G0, 1e-8)
+    check(f"spin-1 (s/d)1 Jcal={Ji} -> 1S(J=1) equals spin-0 width", s, G0, 1e-8)
 
 # 7. 'lattice' gap variant with dV = pi/r reproduces the 'string' variant
 k = lib.hybrid_index(1, 'plus', 1); H = lib.hybrid(1, k); f = lib.quarkonium(1, 0)
@@ -111,7 +140,7 @@ for nl in (False, True):
     Ps = Params('c', nonloc=nl); Pl = Params('c', nonloc=nl, gap='lattice', dV=np.pi / r, dVS=3 * np.pi / r)
     check(f"gap lattice(dV=pi/r, dVS=3pi/r) == string, nonlocal={nl}", width(f, H, 0.9, Pl, r), width(f, H, 0.9, Ps, r), 1e-10)
 
-# 8. non-local widths vs the closed multipole formulas of the notes
+# 8. non-local widths vs the closed multipole formulas of the notes (hybrids: Pi channel)
 #    (quarkonium: Gamma = c1^2 E^3/pi sum_K C(lKl',00)^2/(2K+1) J_K^2;
 #     hybrids:    Gamma = 8E^3/(pi^2 sigma) sum_K w_K/(2K+1) |A_K|^2)
 from scipy.special import eval_legendre, spherical_jn
@@ -128,84 +157,62 @@ for (ni, li, nf, lf, Eq) in [(2, 0, 1, 1, 0.13), (2, 1, 1, 0, 0.7), (2, 2, 1, 1,
         FK = sum((2 * L + 1) * proj(fQ, x, L) * cg(1, 0, L, 0, K, 0) * cg(1, 1, L, 0, K, 1) for L in range(0, LM + 1, 2))
         Gf += Pn.eeQ ** 2 * Eq ** 3 / np.pi * cg(li, 0, K, 0, lf, 0) ** 2 / (2 * K + 1) * np.sum(f.comps[0].c * i.comps[0].c * r * FK) ** 2
     check(f"NL E1 {ni}{'SPDF'[li]}->{nf}{'SPDF'[lf]} multipole formula", width(f, i, Eq, Pn, r), Gf, 1e-8)
-for (Jc, kind, n, lf) in [(1, 'plus', 1, 2), (1, 'minus', 1, 3), (2, 'minus', 1, 0), (2, 'plus', 1, 3)]:
-    k = lib.hybrid_index(Jc, kind, n); H = lib.hybrid(Jc, k); xi = -1 if kind == 'minus' else 1
+for (J, kind, n, lf) in [(1, 'plus', 1, 2), (1, 'minus', 1, 3), (2, 'minus', 1, 0), (2, 'plus', 1, 3)]:
+    k = lib.hybrid_index(J, kind, n); H = lib.hybrid(J, k); xi = -1 if kind == 'minus' else 1
     comps = {cc.l: cc.c for cc in H.comps}
-    cPi = comps[Jc] if xi == -1 else (np.sqrt(Jc + 1) * comps[Jc - 1] + np.sqrt(Jc) * comps[Jc + 1]) / np.sqrt(2 * Jc + 1)
-    kh = (0.7, 1.3, -0.4); Ph = Params('c', kH=kh, nonloc=True, sigma_mode='off'); c1, c2, c3 = [v * Ph.eeQ for v in kh]
+    cPi = comps[J] if xi == -1 else (np.sqrt(J + 1) * comps[J - 1] + np.sqrt(J) * comps[J + 1]) / np.sqrt(2 * J + 1)
+    kh = (0.7, 1.3, -0.4, 0.55); Ph = Params('c', kH=kh, nonloc=True); c1, c2, c3 = [v * Ph.eeQ for v in kh[:3]]
     f = lib.quarkonium(1, lf); Eq = 0.8; x = Eq * r
     a = c2 - Eq * r / (2 * np.pi) * (c1 + c3); b = Eq * r / (2 * np.pi) * (c1 - c3); Gf = 0
     for K in range(1, LM):
         GK = sum((2 * L + 1) * proj(fH, x, L) * (a * cg(1, 1, L, 0, K, 1) ** 2 + b * cg(2, 1, L, 0, K, 1) ** 2) for L in range(0, LM + 1, 2))
-        Gf += 8 * Eq ** 3 / (np.pi ** 2 * Ph.sigma) * wK(K, Jc, lf) / (2 * K + 1) * np.sum(f.comps[0].c * cPi * GK) ** 2
-    check(f"NL HQ Jc={Jc} {kind}{n} -> 1{'SPDF'[lf]} multipole formula", width(f, H, Eq, Ph, r), Gf, 1e-8)
+        Gf += 8 * Eq ** 3 / (np.pi ** 2 * Ph.sigma) * wK(K, J, lf) / (2 * K + 1) * np.sum(f.comps[0].c * cPi * GK) ** 2
+    check(f"NL HQ Pi channel J={J} {kind}{n} -> 1{'SPDF'[lf]} multipole formula", width_split(f, H, Eq, Ph, r)['Pi'], Gf, 1e-8)
 
-# 9. spin-1 hybrids: Gamma(J -> J') = (2J'+1)(2Jc+1) sum_K {l' J' 1; J Jc K}^2 Gamma_K
-for (Jc, kind, lf) in [(1, 'minus', 1), (1, 'plus', 2), (2, 'minus', 2)]:
-    k = lib.hybrid_index(Jc, kind, 1); xi = -1 if kind == 'minus' else 1
-    H0 = lib.hybrid(Jc, k); comps = {cc.l: cc.c for cc in H0.comps}
-    cPi = comps[Jc] if xi == -1 else (np.sqrt(Jc + 1) * comps[Jc - 1] + np.sqrt(Jc) * comps[Jc + 1]) / np.sqrt(2 * Jc + 1)
-    kh = (0.7, 1.3, -0.4); Ph = Params('c', kH=kh, sigma_mode='off'); c1, c2, c3 = [v * Ph.eeQ for v in kh]
+# 9. spin-1 hybrids, Pi channel: Gamma_PiPi(Jcal -> J') = (2J'+1)(2J+1) sum_K {l' J' 1; Jcal J K}^2 Gamma_K
+for (J, kind, lf) in [(1, 'minus', 1), (1, 'plus', 2), (2, 'minus', 2)]:
+    k = lib.hybrid_index(J, kind, 1); xi = -1 if kind == 'minus' else 1
+    H0 = lib.hybrid(J, k); comps = {cc.l: cc.c for cc in H0.comps}
+    cPi = comps[J] if xi == -1 else (np.sqrt(J + 1) * comps[J - 1] + np.sqrt(J) * comps[J + 1]) / np.sqrt(2 * J + 1)
+    kh = (0.7, 1.3, -0.4, 0.55); Ph = Params('c', kH=kh); c1, c2, c3 = [v * Ph.eeQ for v in kh[:3]]
     f0 = lib.quarkonium(1, lf); Eq = 0.8
     I0 = np.sum(f0.comps[0].c * cPi); I1 = np.sum(f0.comps[0].c * cPi * r)
     A1 = c2 * I0 - Eq / (2 * np.pi) * (c1 + c3) * I1; A2 = Eq / (2 * np.pi) * (c1 - c3) * I1
-    GK = {1: 8 * Eq ** 3 / (np.pi ** 2 * sig) * wK(1, Jc, lf) / 3 * A1 ** 2,
-          2: 8 * Eq ** 3 / (np.pi ** 2 * sig) * wK(2, Jc, lf) / 5 * A2 ** 2}
-    for Ji in range(abs(Jc - 1), Jc + 2):
+    GK = {1: 8 * Eq ** 3 / (np.pi ** 2 * sig) * wK(1, J, lf) / 3 * A1 ** 2,
+          2: 8 * Eq ** 3 / (np.pi ** 2 * sig) * wK(2, J, lf) / 5 * A2 ** 2}
+    for Ji in range(abs(J - 1), J + 2):
         for Jf in range(abs(lf - 1), lf + 2):
-            G = width(lib.quarkonium(1, lf, S=1, J=Jf), lib.hybrid(Jc, k, S=1, J=Ji), Eq, Ph, r)
-            Gf = sum((2 * Jf + 1) * (2 * Jc + 1) * float(wigner_6j(lf, Jf, 1, Ji, Jc, K)) ** 2 * GK[K] for K in (1, 2))
-            check(f"spin-1 HQ Jc={Jc} {kind} J={Ji} -> 1{'SPDF'[lf]} J'={Jf} (6j, K=1,2)", G, Gf, 1e-8)
+            G = width_split(lib.quarkonium(1, lf, S=1, J=Jf), lib.hybrid(J, k, S=1, Jcal=Ji), Eq, Ph, r)['Pi']
+            Gf = sum((2 * Jf + 1) * (2 * J + 1) * float(wigner_6j(lf, Jf, 1, Ji, J, K)) ** 2 * GK[K] for K in (1, 2))
+            check(f"spin-1 HQ Pi J={J} {kind} Jcal={Ji} -> 1{'SPDF'[lf]} J'={Jf} (6j, K=1,2)", G, Gf, 1e-8)
 
-# ---------------------------------------------------------------- Sigma_u^-
-def pi_sigma(H, Jc, xi):
-    comps = {cc.l: cc.c for cc in H.comps}
-    if Jc == 0:
-        return np.zeros_like(comps[1]), -comps[1]          # R_Sigma = -R_{l=1}
-    if xi == -1:
-        return comps[Jc], np.zeros_like(comps[Jc])
-    a, b = np.sqrt((Jc + 1) / (2 * Jc + 1)), np.sqrt(Jc / (2 * Jc + 1))
-    return a * comps[Jc - 1] + b * comps[Jc + 1], b * comps[Jc - 1] - a * comps[Jc + 1]
+# ---------------------------------------------------------------- the two channels
+def pi_sigma(H, J, xi):
+    pr = pi_sigma_projections(H)
+    return (pr['R_Pi_lJ'] if xi == -1 else pr['R_Pi']), pr['R_Sigma']
 
-def uv(J, lp):
-    if abs(lp - J) == 2:        # pure rank 2
-        return 0.0, 0.0
-    if lp == J:
-        return -1.0, 0.0
-    if lp == J - 1:
-        return np.sqrt((J + 1) / (2 * J + 1)), np.sqrt(J / (2 * J + 1))
-    return np.sqrt(J / (2 * J + 1)), -np.sqrt((J + 1) / (2 * J + 1))
+def ps(J, lp):
+    return pK(1, J, lp), s_l(J, lp)
 
-# 10. local width with Sigma_u^- vs Eq. (eq:Gfull) [v10], general c1..c4
-for (Jc, kind, n) in [(0, 'sigma', 1), (1, 'plus', 1), (1, 'plus', 2), (1, 'minus', 1), (2, 'plus', 1), (2, 'minus', 1)]:
-    k = lib.hybrid_index(Jc, kind, n); H = lib.hybrid(Jc, k)
-    xi = -1 if kind == 'minus' else +1
-    eta = -xi * (-1) ** Jc
-    cPi, cSig = pi_sigma(H, Jc, xi)
-    for kh in [(1, 1, 1, 1), (0.7, 1.3, -0.4, 0.55)]:
-        for mode in ('EST', 'norm'):
-            Ph = Params('c', kH=kh, sigma_mode=mode); c1, c2, c3, c4 = [x * Ph.eeQ for x in kh]
-            for lf in range(0, 4):
-                if (-1) ** lf != eta or abs(lf - Jc) > 2 or (Jc == 0 and lf != 1):
-                    continue
-                f = lib.quarkonium(1, lf); Eq = 0.8; cf = f.comps[0].c
-                I0 = np.sum(cf * cPi); I1 = np.sum(cf * cPi * r)
-                A1 = c2 * I0 - Eq / (2 * np.pi) * (c1 + c3) * I1
-                A2 = Eq / (2 * np.pi) * (c1 - c3) * I1
-                if mode == 'EST':
-                    A0 = 2 * np.sqrt(np.pi / sig) * (c4 * np.sum(cf * cSig / r) - c3 * Eq / (3 * np.pi) * np.sum(cf * cSig))
-                else:   # g_B|| -> 2 c4/sqrt(pi sigma), same E/B ratio
-                    A0 = c4 * np.sum(cf * cSig) - c3 * Eq / (3 * np.pi) * np.sum(cf * cSig * r)
-                u, v = uv(Jc, lf)
-                Gf = 8 * Eq ** 3 / (np.pi ** 2 * sig) * ((xi * u * A1 + v * A0) ** 2 / 6 + wK(2, Jc, lf) / 5 * A2 ** 2)
-                check(f"Sigma {mode} Jc={Jc} {kind}{n} -> 1{'SPDF'[lf]} c={kh}", width(f, H, Eq, Ph, r), Gf, 1e-7)
+# 10. selection rules of the two channels
+for (J, kind, n) in HTYPES:
+    k = lib.hybrid_index(J, kind, n); H = lib.hybrid(J, k); pr = pi_sigma_projections(H)
+    print(f"  {J} {kind}{n}: P_Pi = {pr['P_Pi']:.4f}, P_Sigma = {pr['P_Sigma']:.4f}")
+    check(f"norm P_Pi + P_Sigma = 1, J={J} {kind}{n}", pr['P_Pi'] + pr['P_Sigma'], 1.0, 1e-10)
+    for lf in range(0, 4):
+        sp = width_split(lib.quarkonium(1, lf), H, 0.8, Params('c', kH=(0.7, 1.3, -0.4, 0.55)), r)
+        if sp['total'] < 1e-20:          # parity forbidden
+            continue
+        if kind == 'minus':
+            check(f"l=J state has no Sigma channel: J={J} -> 1{'SPDF'[lf]}", (sp['Sigma'] + abs(sp['int'])) / sp['total'] * 1e-13, 0.0)
+        if kind == 'sigma':
+            check(f"J=0 state has no Pi channel: -> 1{'SPDF'[lf]}", (sp['Pi'] + abs(sp['int'])) / sp['total'] * 1e-13, 0.0)
 
-# 11. p0 (pure Sigma_u^-): Gamma = 4 E^3/(3 pi^2 sigma) |A0|^2, and Sigma off -> 0
+# 11. p0 (pure Sigma channel): Gamma = 4 E^3/(3 pi^2 sigma) |A0|^2
 k = lib.hybrid_index(0, 'sigma', 1); H = lib.hybrid(0, k); _, cSig = pi_sigma(H, 0, 1)
 f = lib.quarkonium(1, 1); cf = f.comps[0].c; Ph = Params('c', kH=(1, 1, 1, 1)); Eq = 0.95
 A0 = 2 * np.sqrt(np.pi / sig) * Ph.eeQ * (np.sum(cf * cSig / r) - Eq / (3 * np.pi) * np.sum(cf * cSig))
 check("p0 -> h_c(1P) closed formula", width(f, H, Eq, Ph, r), 4 * Eq ** 3 / (3 * np.pi ** 2 * sig) * A0 ** 2, 1e-7)
-check("p0 -> h_c(1P), Sigma off = 0", width(f, H, Eq, Params('c', sigma_mode='off'), r), 0.0)
 
 # 12. non-local Sigma vertex, p0 -> 1P: only rank K = 1 survives (effective S -> P);
 #     A0 -> sum c_f c_S [w4 c4 F1[f] + w2 c2 F1[f - F3] + w3 c3 F1[(9 f - F3)/8]]
@@ -231,21 +238,21 @@ for (rr, q) in [(3.0, 0.4), (6.0, 1.1), (2.0, 4.0)]:
               - 4 * c3 / (3 * np.pi * sig) * q * (9 * fH(Q) - fH3(Q)) / 8)
         check(f"FT rho_Sigma r={rr} q={q} (c2,c3,c4)={(c2, c3, c4)}", num, cl, 1e-9)
 
-# 14. spin-1 hybrids with the Sigma_u^- vertex: 6j recoupling of the rank-1 (Pi+Sigma) and rank-2 widths
-for (Jc, n, lf) in [(1, 1, 0), (1, 1, 2), (2, 1, 1)]:
-    k = lib.hybrid_index(Jc, 'plus', n); H0 = lib.hybrid(Jc, k); cPi, cSig = pi_sigma(H0, Jc, 1)
+# 14. spin-1 hybrids with both channels: 6j recoupling of the rank-1 (Pi + Sigma) and rank-2 widths
+for (J, n, lf) in [(1, 1, 0), (1, 1, 2), (2, 1, 1)]:
+    k = lib.hybrid_index(J, 'plus', n); H0 = lib.hybrid(J, k); cPi, cSig = pi_sigma(H0, J, 1)
     kh = (0.7, 1.3, -0.4, 0.55); Ph = Params('c', kH=kh); c1, c2, c3, c4 = [v * Ph.eeQ for v in kh]
     f0 = lib.quarkonium(1, lf); cf = f0.comps[0].c; Eq = 0.8
     I0 = np.sum(cf * cPi); I1 = np.sum(cf * cPi * r)
     A1 = c2 * I0 - Eq / (2 * np.pi) * (c1 + c3) * I1; A2 = Eq / (2 * np.pi) * (c1 - c3) * I1
     A0 = 2 * np.sqrt(np.pi / sig) * (c4 * np.sum(cf * cSig / r) - c3 * Eq / (3 * np.pi) * np.sum(cf * cSig))
-    u, v = uv(Jc, lf)
+    u, v = ps(J, lf)
     GK = {1: 8 * Eq ** 3 / (np.pi ** 2 * sig) * (u * A1 + v * A0) ** 2 / 6,
-          2: 8 * Eq ** 3 / (np.pi ** 2 * sig) * wK(2, Jc, lf) / 5 * A2 ** 2}
-    for Ji in range(abs(Jc - 1), Jc + 2):
+          2: 8 * Eq ** 3 / (np.pi ** 2 * sig) * wK(2, J, lf) / 5 * A2 ** 2}
+    for Ji in range(abs(J - 1), J + 2):
         for Jf in range(abs(lf - 1), lf + 2):
-            G = width(lib.quarkonium(1, lf, S=1, J=Jf), lib.hybrid(Jc, k, S=1, J=Ji), Eq, Ph, r)
-            Gf = sum((2 * Jf + 1) * (2 * Jc + 1) * float(wigner_6j(lf, Jf, 1, Ji, Jc, K)) ** 2 * GK[K] for K in (1, 2))
-            check(f"spin-1 + Sigma Jc={Jc} plus J={Ji} -> 1{'SPDF'[lf]} J'={Jf}", G, Gf, 1e-8)
+            G = width(lib.quarkonium(1, lf, S=1, J=Jf), lib.hybrid(J, k, S=1, Jcal=Ji), Eq, Ph, r)
+            Gf = sum((2 * Jf + 1) * (2 * J + 1) * float(wigner_6j(lf, Jf, 1, Ji, J, K)) ** 2 * GK[K] for K in (1, 2))
+            check(f"spin-1 + Sigma J={J} plus Jcal={Ji} -> 1{'SPDF'[lf]} J'={Jf}", G, Gf, 1e-8)
 
 print("ALL PASS" if ok else "SOME FAILURES")

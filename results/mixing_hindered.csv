@@ -1,13 +1,5 @@
-transition,variant,k_MeV,path_H_to_Q,path_Q_to_H,coherent,sigma_mode
-psi(2S)->gamma eta_c(1S),A-NL,635.159,206.474,74.244,528.342,EST
-psi(2S)->gamma eta_c(1S),B-NL,635.159,13.0162,8.39993,42.3288,EST
-J/psi->gamma eta_c(1S),A-NL,110.755,4.63967,4.64078,18.5609,EST
-J/psi->gamma eta_c(1S),B-NL,110.755,1.00095,1.3342,4.64641,EST
-psi(2S)->gamma eta_c(1S),A-NL,635.159,14.3433,0.0267674,15.6093,norm
-psi(2S)->gamma eta_c(1S),B-NL,635.159,2.01252,0.651946,0.373569,norm
-J/psi->gamma eta_c(1S),A-NL,110.755,0.720929,0.78622,3.01288,norm
-J/psi->gamma eta_c(1S),B-NL,110.755,0.264218,0.367968,1.2558,norm
-psi(2S)->gamma eta_c(1S),A-NL,635.159,6.83274,0.00226836,7.084,off
-psi(2S)->gamma eta_c(1S),B-NL,635.159,1.40754,0.269235,0.445584,off
-J/psi->gamma eta_c(1S),A-NL,110.755,0.304578,0.35114,1.30978,off
-J/psi->gamma eta_c(1S),B-NL,110.755,0.149996,0.211568,0.717847,off
+transition,variant,k_MeV,path_H_to_Q,path_Q_to_H,coherent,coherent_Pi,coherent_Sigma,coherent_int
+psi(2S)->gamma eta_c(1S),A-NL,635.159,206.474,74.244,528.342,7.084,413.069,108.188
+psi(2S)->gamma eta_c(1S),B-NL,635.159,13.0162,8.39993,42.3288,0.445584,34.0885,7.79469
+J/psi->gamma eta_c(1S),A-NL,110.755,4.63967,4.64078,18.5609,1.30978,10.0095,7.24161
+J/psi->gamma eta_c(1S),B-NL,110.755,1.00095,1.3342,4.64641,0.717847,1.71163,2.21693

@@ -1,5 +1,6 @@
-"""Runs the full EM-transition phenomenology (EM_Pheno v2: hybrid vertex with
-Pi_u and Sigma_u^- components, v10 notes) and writes results/ (CSV, JSON).
+"""Runs the full EM-transition phenomenology (EM_Pheno v3: one hybrid vertex
+with its Pi_u and Sigma_u^- channels on the same footing, every hybrid width
+split as Gamma_PiPi + Gamma_SigmaSigma + Gamma_int) and writes results/ (CSV, JSON).
 Tables: make_tables.py; figures: figures.py; size estimates: r_moments.py.
 
     python3 run_all.py            (from the python/ folder)
@@ -94,40 +95,44 @@ write_csv('hybrid_predictions.csv', hyb_rows)
 # data constraints on kappa_H from BESIII gamma eta_c
 ULs = HY.derived_ul_gamma_etac()
 summary['ULs_gamma_etac'] = ULs
-libc = libs['c']; dVc = HY.load_gaps('c')
+libc = libs['c']; gapc = HY.load_gaps('c')
 hc = {h[0]: h for h in HY.HYBRIDS['c']}
 fin_etac = [f for f in HY.FINALS['c'] if f[0] == 'eta_c(1S)'][0]
 cons = []
 for cand, hl in (('psi(4040)', '1(s/d)1'), ('psi(4415)', '2(s/d)1')):
     UL = ULs[cand]['Gamma_UL_keV']
     for v in HY.VARIANTS:
-        for sm in ('EST', 'norm', 'off'):
-            g1, E = HY.gamma('c', libc, dVc, hc[hl], fin_etac, v, (1.0,) * 4, sigma_mode=sm)
-            gB = HY.gamma('c', libc, dVc, hc[hl], fin_etac, v, (0.0, 1.0, 0.0, 1.0), sigma_mode=sm)[0]
-            kmax = np.sqrt(UL / g1)
-            cons.append({'candidate': cand, 'hybrid': hl, 'variant': v, 'sigma_mode': sm, 'Gamma_k1_keV': g1,
-                         'Gamma_c2only_k1_keV': gB, 'Gamma_UL_keV': UL,
-                         'kappa_H_max': kmax, 'kappa_c2only_max': np.sqrt(UL / gB)})
-            print(f"  {cand} -> gamma eta_c {v} Sigma={sm}: Gamma(k=1)={g1:.1f} keV, UL {UL:.1f} -> kappa_H < {kmax:.3f}")
+        sp, E = HY.gamma_split('c', libc, gapc, hc[hl], fin_etac, v, (1.0,) * 4)
+        gB = HY.gamma('c', libc, gapc, hc[hl], fin_etac, v, (0.0, 1.0, 0.0, 1.0))[0]
+        b_ = HY.channel_bounds(sp, UL)
+        cons.append({'candidate': cand, 'hybrid': hl, 'variant': v, 'Gamma_k1_keV': sp['total'],
+                     'Gamma_k1_Pi_keV': sp['Pi'], 'Gamma_k1_Sigma_keV': sp['Sigma'], 'Gamma_k1_int_keV': sp['int'],
+                     'Gamma_mag_k1_keV': gB, 'Gamma_UL_keV': UL, **b_,
+                     'kappa_mag_max': np.sqrt(UL / gB)})
+        print(f"  {cand} -> gamma eta_c {v}: Gamma(k=1)={sp['total']:.1f} keV "
+              f"[Pi {sp['Pi']:.1f}, Sigma {sp['Sigma']:.1f}, int {sp['int']:.1f}], UL {UL:.1f} -> kappa_H < {b_['kappa_H_max']:.3f}")
 write_csv('hybrid_kappa_constraints.csv', cons)
 
 # quadratic forms in c = (c1, c2, c3, c4)/(e e_c): Gamma = c^T Q c (keV)
 planes = {}
 for cand, hl in (('psi(4040)', '1(s/d)1'), ('psi(4415)', '2(s/d)1')):
     for v in ('A-NL', 'B-NL', 'A-L', 'B-L'):
-        planes[(cand, v)] = HY.quadratic_form('c', libc, dVc, hc[hl], fin_etac, v)
+        planes[(cand, v)] = HY.quadratic_form('c', libc, gapc, hc[hl], fin_etac, v)
 np.save(os.path.join(RES, 'quadratic_forms.npy'), {f'{k[0]}|{k[1]}': v for k, v in planes.items()}, allow_pickle=True)
 
-# (kappa_Pi, kappa_Sigma) plane: c1 = c2 = c3 = kappa_Pi, c4 = kappa_Sigma.
-# For each ray kappa_Sigma = t kappa_Pi the bound is kappa_Pi^2 (v^T Q v) < UL, v = (1,1,1,t)
+# channel plane (kappa_Pi, kappa_Sigma): Gamma = kappa_Pi^2 G_Pi + kappa_Sigma^2 G_Sigma + kappa_Pi kappa_Sigma G_int.
+# For each ray kappa_Sigma = t kappa_Pi the bound is kappa_Pi^2 (G_Pi + t^2 G_Sigma + t G_int) < UL
 pl_rows = []
+cmap = {(r_['candidate'], r_['variant']): r_ for r_ in cons}
 for v in ('A-NL', 'B-NL', 'A-L', 'B-L'):
-    for t in (0.0, 0.25, 0.5, 1.0):
-        vv = np.array([1.0, 1.0, 1.0, t])
-        kmax = min(np.sqrt(ULs[cand]['Gamma_UL_keV'] / (vv @ planes[(cand, v)] @ vv))
+    for t in (0.0, 0.25, 0.5, 1.0, 2.0):
+        kmax = min(np.sqrt(ULs[cand]['Gamma_UL_keV'] /
+                           (cmap[(cand, v)]['Gamma_k1_Pi_keV'] + t * t * cmap[(cand, v)]['Gamma_k1_Sigma_keV']
+                            + t * cmap[(cand, v)]['Gamma_k1_int_keV']))
                    for cand in ('psi(4040)', 'psi(4415)'))
-        pl_rows.append({'variant': v, 'c4_over_c': t, 'kappa_Pi_max': kmax})
-    # largest |c4| allowed for c1=c2=c3=kappa_c (fitted E1 normalization)
+        pl_rows.append({'variant': v, 'kSigma_over_kPi': t, 'kappa_Pi_max': kmax})
+    # largest |c4| allowed for c1=c2=c3=kappa_c (fitted E1 normalization): c4 is the
+    # only coefficient not shared by the two channels
     kc0 = summary['kappa_c'][0]
     best = []
     for cand in ('psi(4040)', 'psi(4415)'):
@@ -136,36 +141,35 @@ for v in ('A-NL', 'B-NL', 'A-L', 'B-L'):
         disc = b * b - 4 * a * c
         best.append(((-b - np.sqrt(disc)) / (2 * a), (-b + np.sqrt(disc)) / (2 * a)) if disc > 0 else (np.nan, np.nan))
     lo = max(x[0] for x in best); hi = min(x[1] for x in best)
-    pl_rows.append({'variant': v, 'c4_over_c': 'range_c4_at_kappa_c', 'kappa_Pi_max': f'[{lo:.3f}, {hi:.3f}]'})
-write_csv('hybrid_sigma_plane.csv', pl_rows)
+    summary.setdefault('c4_range_at_kappa_c', {})[v] = (lo / kc0, hi / kc0)
+    pl_rows.append({'variant': v, 'kSigma_over_kPi': 'c4/c range at kappa_c', 'kappa_Pi_max': f'[{lo / kc0:.3f}, {hi / kc0:.3f}]'})
+write_csv('hybrid_channel_plane.csv', pl_rows)
 for r_ in pl_rows:
     print('   plane', r_)
 
-# spin-1 hybrids (heavy-quark spin 1): explicit J -> J' widths for 1(s/d)1 and 1p1
+# spin-1 hybrids (heavy-quark spin 1): explicit Jcal -> J' widths for 1(s/d)1 and 1p1
 spin1 = []
 for fl in ('c', 'b'):
-    lib = libs[fl]; dV = HY.load_gaps(fl)
+    lib = libs[fl]; gp = HY.load_gaps(fl)
     kap = summary['kappa_c'][0] if fl == 'c' else summary['kappa_b'][0]
     hh = {h[0]: h for h in HY.HYBRIDS[fl]}
     for hl, finals in (('1(s/d)1', [(1, 0), (2, 0)]), ('1p1', [(1, 1)])):
         h = hh[hl]
         for (nf, lf) in finals:
             fin = [f for f in HY.FINALS[fl] if f[1] == nf and f[2] == lf][0]
-            for Ji in range(abs(h[1] - 1), h[1] + 2):
+            for Jcal in range(abs(h[1] - 1), h[1] + 2):
                 for Jf in range(abs(lf - 1), lf + 2):
                     for v in ('A-NL', 'B-NL'):
-                        g, E = HY.gamma(fl, lib, dV, h, fin, v, (kap,) * 4, S=1, Ji=Ji, Jf=Jf)
-                        spin1.append({'flavor': fl, 'hybrid': hl, 'Jcal_i': Ji, 'final_n_l': f'{nf}{"SPDF"[lf]}',
-                                      'J_f': Jf, 'variant': v, 'Gamma_keV': g})
+                        sp, E = HY.gamma_split(fl, lib, gp, h, fin, v, (kap,) * 4, S=1, Jcal=Jcal, Jf=Jf)
+                        spin1.append({'flavor': fl, 'hybrid': hl, 'Jcal_i': Jcal, 'final_n_l': f'{nf}{"SPDF"[lf]}',
+                                      'J_f': Jf, 'variant': v, 'Gamma_keV': sp['total'], 'Pi_keV': sp['Pi'],
+                                      'Sigma_keV': sp['Sigma'], 'int_keV': sp['int']})
 write_csv('hybrid_spin1.csv', spin1)
 
 # =========================================================== 3. mixing (charm)
 print('== mixing')
 kH = summary['kappa_c'][0]
 mix_rows = MX.table(summary['kappa_c'][0], kH)
-for sm in ('norm', 'off'):
-    for r_, o_ in zip(mix_rows, MX.table(summary['kappa_c'][0], kH, sigma_mode=sm)):
-        r_['A-NL_' + sm] = o_['A-NL']; r_['B-NL_' + sm] = o_['B-NL']
 write_csv('mixing_1mm.csv', mix_rows)
 # kappa_H limits from the mixed (mix=true) states
 mixcons = []
@@ -174,32 +178,45 @@ ULmix = {'psi(4040)': ULs['psi(4040)']['Gamma_UL_keV'], 'psi(4415)': ULs['psi(44
 for r in mix_rows:
     if r['final'] == 'eta_c(1S)' and r['state'] in ULmix:
         for v in ('A-NL', 'B-NL'):
-            for sm, key in (('EST', v), ('norm', v + '_norm'), ('off', v + '_off')):
-                mixcons.append({'state': r['state'], 'content': r['content'], 'variant': v, 'sigma_mode': sm,
-                                'Gamma_at_kappaH_keV': r[key], 'kappa_H_used': kH, 'Gamma_UL_keV': ULmix[r['state']],
-                                'kappa_H_max': kH * np.sqrt(ULmix[r['state']] / r[key])})
+            mixcons.append({'state': r['state'], 'content': r['content'], 'variant': v,
+                            'Gamma_at_kappaH_keV': r[v], 'Pi_keV': r[v + '_Pi'], 'Sigma_keV': r[v + '_Sigma'],
+                            'int_keV': r[v + '_int'], 'kappa_H_used': kH, 'Gamma_UL_keV': ULmix[r['state']],
+                            'kappa_H_max': kH * np.sqrt(ULmix[r['state']] / r[v])})
 write_csv('mixing_kappa_constraints.csv', mixcons)
 for r in mixcons:
-    print('   mix-constraint', r['state'], r['variant'], r['sigma_mode'], f"kappa_H < {r['kappa_H_max']:.2f}")
-hind = []
-for sm in ('EST', 'norm', 'off'):
-    for r_ in MX.hindered_psi2S_etac(kH, sigma_mode=sm):
-        r_['sigma_mode'] = sm
-        hind.append(r_)
+    print('   mix-constraint', r['state'], r['variant'], f"kappa_H < {r['kappa_H_max']:.2f}")
+hind = MX.hindered_psi2S_etac(kH)
 write_csv('mixing_hindered.csv', hind)
 for r in hind:
     print('  ', r)
 
-# Sigma_u^- coupling scan: c1 = c2 = c3 = kappa_c, c4 = t kappa_c
-print('== Sigma coupling scan')
-scan = MX.sigma_scan(kH, np.round(np.linspace(0.0, 1.4, 57), 4))
+# c4 scan: c1 = c2 = c3 = kappa_c, c4 = t kappa_c (g_B_par is the only LEF not fixed by the Pi_u channel)
+print('== c4 scan')
+scan = MX.c4_scan(kH, np.round(np.linspace(0.0, 1.4, 57), 4))
 hcd = {h[0]: h for h in HY.HYBRIDS['c']}
 for t in sorted(set(r_['c4_over_c'] for r_ in scan)):
     for cand, hl in (('psi(4040)', '1(s/d)1'), ('psi(4415)', '2(s/d)1')):
         for v in ('A-NL', 'B-NL'):
-            g = HY.gamma('c', libc, dVc, hcd[hl], fin_etac, v, (kH, kH, kH, t * kH))[0]
+            g = HY.gamma('c', libc, gapc, hcd[hl], fin_etac, v, (kH, kH, kH, t * kH))[0]
             scan.append({'c4_over_c': t, 'state': cand + ' (unmixed)', 'variant': v, 'Gamma_keV': g})
-write_csv('sigma_scan.csv', scan)
+write_csv('c4_scan.csv', scan)
+# c4 window allowed by the mixed-state data: the hybrid-admixture contribution alone must not
+# exceed the measured J/psi, psi(2S) -> gamma eta_c widths (+2 sigma; they also receive the M1
+# contribution, not included) nor the psi(3770) limit
+from emlib.mixing import GAMMA_ETAC_EXP
+win = {}
+for v in ('A-NL', 'B-NL'):
+    ok = []
+    for t in sorted(set(r_['c4_over_c'] for r_ in scan)):
+        g = {r_['state']: r_['Gamma_keV'] for r_ in scan if r_['c4_over_c'] == t and r_['variant'] == v}
+        good = (g['J/psi (mixed)'] < GAMMA_ETAC_EXP['J/psi'][0] + 2 * GAMMA_ETAC_EXP['J/psi'][1] and
+                g['psi(2S) (mixed)'] < GAMMA_ETAC_EXP['psi(2S)'][0] + 2 * GAMMA_ETAC_EXP['psi(2S)'][1] and
+                g['psi(3770) (mixed)'] < GAMMA_ETAC_EXP['psi(3770)'][1])
+        if good:
+            ok.append(t)
+    win[v] = (min(ok), max(ok)) if ok else None
+summary['c4_window_mixed_states'] = win
+print('   c4/c window from J/psi, psi(2S), psi(3770) -> gamma eta_c:', win)
 
 # =========================================================== 4. lattice (arXiv:2301.08213)
 print('== lattice comparison')
@@ -219,14 +236,19 @@ print('  ', summary['lattice']['beta2'])
 # constituent-gluon model of Jafarzade & Swanson (arXiv:2610.22088)
 h_sd1 = [h for h in HY.HYBRIDS['c'] if h[0] == '1(s/d)1'][0]
 lh = LT.hybrid_lattice_table(libs['c'], HY.load_gaps('c'), h_sd1, ('A-NL', 'A-L', 'B-NL', 'B-L'),
-                             ('off', 'EST', 'norm'), summary['kappa_c'][0])
+                             summary['kappa_c'][0])
 write_csv('lattice_hybrids.csv', lh)
+# channel strengths that reproduce both lattice widths of a data set
+lsol = LT.channel_solutions(lh)
+write_csv('lattice_channel_solutions.csv', lsol)
+summary['lattice_channel_solutions'] = lsol
+for r_ in lsol:
+    print('   lattice channel solution', r_)
 Es = np.round(np.arange(0.60, 1.501, 0.0125), 4)
-write_csv('gamma_vs_Eq.csv', LT.gamma_vs_Eq(libs['c'], HY.load_gaps('c'), h_sd1, ('A-NL', 'B-NL'),
-                                             ('off', 'EST', 'norm'), Es))
+write_csv('gamma_vs_Eq.csv', LT.gamma_vs_Eq(libs['c'], HY.load_gaps('c'), h_sd1, ('A-NL', 'B-NL'), Es))
 for r_ in lh:
     if r_['variant'] in ('A-NL', 'B-NL'):
-        print(f"   {r_['channel']:15s} {r_['dataset']:8s} {r_['variant']} {r_['sigma_mode']:4s} E={r_['E_q']:.3f} "
+        print(f"   {r_['channel']:15s} {r_['dataset']:8s} {r_['variant']} E={r_['E_q']:.3f} "
               f"G(kc)={r_['Gamma_kappac_keV']:9.1f}  lat={r_['lat_keV']}  kH={r_['kappaH']:.3f}")
 
 with open(os.path.join(RES, 'summary.json'), 'w') as f:

@@ -82,7 +82,8 @@ def chic0_comparison(G_lo_local, G_lo_nonlocal, kappa_c, dk, G_exp, G_exp_err):
 #    for eta_c1 -> J/psi gamma, quoted 105(8) keV, Eq. (6.17)).
 #    psi_hyb -> eta_c gamma: quoted 59(6) keV, Eq. (6.13). Eq. (6.6) with the
 #    tabulated F(0) = 0.2532 (Table 6.8) and lattice masses gives 29.9 keV, which is
-#    the value 30.3(1.8) keV used by Jafarzade & Swanson; the same factor ~2
+#    the value 30.3(1.8) keV used by Jafarzade & Swanson (we scale the quoted 10%
+#    error: 29.9(3.0) keV); the same factor ~2
 #    appears for psi' -> eta_c gamma (0.245 vs quoted 0.485(60) keV), so it is a
 #    normalization issue internal to the thesis for V -> P. We keep both.
 # Statistical errors only; Ref. 2610.22088 estimates an extra ~30% systematic.
@@ -94,7 +95,7 @@ LATTICE_HYBRID = [
     ('Y->eta_c', 'quenched', 0, None, 4.400, ('eta_c(1S)', 1, 0, 2.98409), 42.0, 18.0),
     ('eta_c1->J/psi', 'quenched', 1, 1, 4.300, ('J/psi', 1, 0, 3.096900), 115.0, 16.0),
     ('Y->eta_c', 'Nf3', 0, None, LAT_M['psi_hyb'], ('eta_c(1S)', 1, 0, LAT_M['eta_c']), 59.0, 6.0),
-    ('Y->eta_c', 'Nf3-F0', 0, None, LAT_M['psi_hyb'], ('eta_c(1S)', 1, 0, LAT_M['eta_c']), 29.9, 1.8),
+    ('Y->eta_c', 'Nf3-F0', 0, None, LAT_M['psi_hyb'], ('eta_c(1S)', 1, 0, LAT_M['eta_c']), 29.9, 3.0),
     ('eta_c1->J/psi', 'Nf3', 1, 1, LAT_M['eta_c1'], ('J/psi', 1, 0, LAT_M['J/psi']), 105.0, 8.0),
 ]
 # model of Jafarzade & Swanson (keV), their kinematics
@@ -107,39 +108,64 @@ THESIS_V_ETAC = {"psi(2S)": (0.485, 0.060), "psi(3770)": (0.33, 0.11), 'J/psi': 
 LAT_SYST = 0.30
 
 
-def hybrid_lattice_table(flavor_lib, gaps, hyb, variants, modes, kappa):
+def hybrid_lattice_table(flavor_lib, gaps, hyb, variants, kappa):
     """Our LO widths (keV) at the kinematics of each lattice determination, and
     the kappa_H that reproduces it; plus the S=1 partners at the J&S kinematics."""
     from . import hybrids as HY
     rows = []
     entries = [e + (None,) for e in LATTICE_HYBRID] + \
-              [(ch, 'JS-kin', S, J, M, ('J/psi', 1, 0, 3.096900), np.nan, np.nan, None) for ch, S, J, M in JS_PARTNERS]
-    for ch, ds, S, J, Mi, fin, G, dG, _ in entries:
+              [(ch, 'JS-kin', S, Jcal, M, ('J/psi', 1, 0, 3.096900), np.nan, np.nan, None) for ch, S, Jcal, M in JS_PARTNERS]
+    for ch, ds, S, Jcal, Mi, fin, G, dG, _ in entries:
         h = tuple(hyb[:6]) + (Mi,) + tuple(hyb[7:])
         Jf = None if S == 0 else 1
         for v in variants:
-            for sm in modes:
-                g1, E = HY.gamma('c', flavor_lib, gaps, h, fin, v, (1.0,) * 4, S=S, Ji=J, Jf=Jf, sigma_mode=sm)
-                rows.append({'channel': ch, 'dataset': ds, 'M_i': Mi, 'M_f': fin[3], 'E_q': E,
-                             'variant': v, 'sigma_mode': sm, 'Gamma_k1_keV': g1,
-                             'Gamma_kappac_keV': kappa ** 2 * g1, 'lat_keV': G, 'dlat_keV': dG,
-                             'kappaH': np.sqrt(G / g1) if G == G else np.nan,
-                             'JS_keV': JS_MODEL.get(ch, np.nan)})
+            sp, E = HY.gamma_split('c', flavor_lib, gaps, h, fin, v, (1.0,) * 4, S=S, Jcal=Jcal, Jf=Jf)
+            g1 = sp['total']
+            rows.append({'channel': ch, 'dataset': ds, 'M_i': Mi, 'M_f': fin[3], 'E_q': E,
+                         'variant': v, 'Gamma_k1_keV': g1, 'Gamma_k1_Pi_keV': sp['Pi'],
+                         'Gamma_k1_Sigma_keV': sp['Sigma'], 'Gamma_k1_int_keV': sp['int'],
+                         'Gamma_kappac_keV': kappa ** 2 * g1, 'lat_keV': G, 'dlat_keV': dG,
+                         'kappaH': np.sqrt(G / g1) if G == G else np.nan,
+                         'JS_keV': JS_MODEL.get(ch, np.nan)})
     return rows
 
 
-def gamma_vs_Eq(lib, gaps, hyb, variants, modes, Es):
+def gamma_vs_Eq(lib, gaps, hyb, variants, Es):
     """Gamma(1(s/d)_1 -> eta_c(1S) gamma)(E_q) at kappa_H = 1 (keV). At our order this is
     also Gamma(S=1 (s/d)_1, any Jcal -> J/psi gamma) at the same E_q."""
     from . import hybrids as HY
-    from .amplitudes import width
+    from .amplitudes import width_split
     st = HY.hybrid_state(lib, hyb)
     f = lib.quarkonium(1, 0)
     out = []
     for v in variants:
-        for sm in modes:
-            P = HY.params('c', v, (1.0,) * 4, gaps, sm)
-            for E in Es:
-                out.append({'variant': v, 'sigma_mode': sm, 'E_q': float(E),
-                            'Gamma_k1_keV': width(f, st, E, P, lib.r) * 1e6})
+        P = HY.params('c', v, (1.0,) * 4, gaps)
+        for E in Es:
+            sp = width_split(f, st, E, P, lib.r)
+            out.append({'variant': v, 'E_q': float(E), 'Gamma_k1_keV': sp['total'] * 1e6,
+                        'Pi_keV': sp['Pi'] * 1e6, 'Sigma_keV': sp['Sigma'] * 1e6, 'int_keV': sp['int'] * 1e6})
+    return out
+
+
+def channel_solutions(rows, variants=('A-NL', 'A-L', 'B-NL', 'B-L')):
+    """Channel strengths (kappa_Pi, kappa_Sigma) that reproduce two lattice widths of the
+    same data set at once, Gamma = kappa_Pi^2 G_PiPi + kappa_Sigma^2 G_SigmaSigma +
+    kappa_Pi kappa_Sigma G_int (G at kappa = 1). All solutions with kappa_Pi > 0."""
+    from scipy.optimize import fsolve
+    def get(ch, ds, v):
+        r = [x for x in rows if x['channel'] == ch and x['dataset'] == ds and x['variant'] == v][0]
+        return (r['Gamma_k1_Pi_keV'], r['Gamma_k1_Sigma_keV'], r['Gamma_k1_int_keV'], r['lat_keV'])
+    G = lambda k, a: k[0] ** 2 * a[0] + k[1] ** 2 * a[1] + k[0] * k[1] * a[2]
+    out = []
+    for v in variants:
+        for yset, hset in (('quenched', 'quenched'), ('Nf3', 'Nf3'), ('Nf3-F0', 'Nf3')):
+            Y, H = get('Y->eta_c', yset, v), get('eta_c1->J/psi', hset, v)
+            sols = set()
+            for x0 in [(0.5, 0.5), (0.5, -0.5), (0.2, 1), (0.2, -1), (1, 1), (0.3, 0.1), (0.5, 2), (0.5, -2), (0.1, 3), (0.1, -3)]:
+                s, info, ier, msg = fsolve(lambda k: [G(k, Y) - Y[3], G(k, H) - H[3]], x0, full_output=True)
+                if ier == 1 and s[0] > 0 and abs(G(s, Y) / Y[3] - 1) < 1e-8:
+                    sols.add((round(float(s[0]), 4), round(float(s[1]), 4)))
+            for kP, kS in sorted(sols, key=lambda t: abs(t[1])):
+                out.append({'variant': v, 'Y_dataset': yset, 'etac1_dataset': hset, 'kappa_Pi': kP, 'kappa_Sigma': kS,
+                            'kSigma_over_kPi': kS / kP})
     return out

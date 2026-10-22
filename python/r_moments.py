@@ -16,7 +16,7 @@ Output: results/r_moments_states.csv, results/r_moments_transitions.csv
 import os, sys, csv
 import numpy as np
 sys.path.insert(0, os.path.dirname(__file__))
-from emlib.states import Library
+from emlib.states import Library, pi_sigma_projections
 from emlib import hybrids as HY
 from emlib.amplitudes import photon_energy, Params
 
@@ -40,17 +40,10 @@ def moments(lib, st):
 
 
 def sigma_pi_weights(st, J):
-    """Sigma_u^- and Pi_u weights of a hybrid state (notes: R_Pi, R_Sigma in
-    terms of the l = J-1, J+1 radial functions; l = J channel is pure Pi)."""
-    by_l = {c.l: c.c for c in st.comps}
-    if J == 0:
-        return 1.0, 0.0
-    cm, cp, c0 = by_l.get(J - 1, 0), by_l.get(J + 1, 0), by_l.get(J, 0)
-    a, b = np.sqrt(J / (2 * J + 1)), np.sqrt((J + 1) / (2 * J + 1))
-    cS = a * cm - b * cp
-    cP2 = (b * cm + a * cp) ** 2 + np.asarray(c0) ** 2
-    wS, wP = float(np.sum(cS ** 2)), float(np.sum(cP2))
-    return wS / (wS + wP), wP / (wS + wP)
+    """Sigma_u^- and Pi_u weights of a hybrid state: int R_Sigma^2 and int R_Pi^2
+    with R_Pi, R_Sigma the projections of Eqs. (eq:lab_RPi), (eq:lab_RSigma)."""
+    pr = pi_sigma_projections(st)
+    return pr['P_Sigma'], pr['P_Pi']
 
 
 def overlap_size(lib, sf, si):
@@ -61,11 +54,11 @@ def overlap_size(lib, sf, si):
 
 
 def allowed(h, fin):
-    Jc, kind, lf = h[1], h[2], fin[2]
+    J, kind, lf = h[1], h[2], fin[2]
     if kind == 'sigma':
         return lf == 1
     xi = -1 if kind == 'minus' else +1
-    return ((-1) ** lf == -xi * (-1) ** Jc) and abs(lf - Jc) <= 2
+    return ((-1) ** lf == -xi * (-1) ** J) and abs(lf - J) <= 2
 
 
 def main():

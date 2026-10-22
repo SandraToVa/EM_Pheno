@@ -79,12 +79,12 @@ class AngularGrid:
                 self._ycache[key] = sph_harm_y(l, m, self.TH, self.PH)
         return self._ycache[key]
 
-    def vecY(self, l, Jc, M):
-        """Vector spherical harmonic sum_mu C(l 1 Jc; M-mu, mu) Y_l^{M-mu} chi_mu
+    def vecY(self, l, J, M):
+        """Vector spherical harmonic sum_mu C(l 1 J; M-mu, mu) Y_l^{M-mu} chi_mu
         (angular part of the hybrid wave function, Eq. (112))."""
         out = np.zeros(self.TH.shape + (3,), dtype=complex)
         for mu in (-1, 0, 1):
-            c = cg(l, M - mu, 1, mu, Jc, M)
+            c = cg(l, M - mu, 1, mu, J, M)
             if c != 0.0:
                 out += c * self.Y(l, M - mu)[..., None] * CHI[mu]
         return out
