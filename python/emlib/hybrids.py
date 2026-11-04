@@ -3,10 +3,11 @@
 The hybrid vertex has two channels on the same footing (amplitudes.py):
   Pi_u    transverse operators g_B_perp (c2), g_E_par (c3), g_E_perp (c1), gap Delta_Pi;
   Sigma_u^- longitudinal operators g_B_par (c4), g_E^Sigma (c3),          gap Delta_Sigma.
-Variants of the gaps (Sec. sec:pheno_strategy):
-  'A'  Delta_Pi = pi/r,              Delta_Sigma = 3 pi/r                (EST, as matched)
-  'B'  Delta_Pi = V_Pi_u - V_Sigma_g, Delta_Sigma = V_Sigma_u - V_Sigma_g (BOEFT potentials)
-each in the local (L, multipole-expanded) or non-local (NL, string) form.
+Variants (VARIANTS):
+  'NL', 'L'          matched gaps Delta_Pi = pi/r, Delta_Sigma = 3 pi/r (EST, as matched; the
+                     results of Sec. sec:pheno), non-local (string) or local (multipole) form;
+  'pot-NL', 'pot-L'  gaps from the BOEFT potentials, Delta_Pi = V_Pi_u - V_Sigma_g,
+                     Delta_Sigma = V_Sigma_u - V_Sigma_g (App. app:potential_gaps).
 Couplings: c_i = kappa_i e e_Q, with c1 = c2 = c3 = c4 (one string coupling)
 unless stated otherwise. Every width is returned with its exact split
 Gamma = Gamma_PiPi + Gamma_SigmaSigma + Gamma_int (width_split), so the
@@ -58,8 +59,8 @@ FINALS = {
           ('h_b3(1F)', 1, 3, 10.35, 'est')],
 }
 
-VARIANTS = {'A-NL': ('string', True), 'A-L': ('string', False),
-            'B-NL': ('lattice', True), 'B-L': ('lattice', False)}
+VARIANTS = {'NL': ('matched', True), 'L': ('matched', False),
+            'pot-NL': ('potential', True), 'pot-L': ('potential', False)}
 
 
 def load_dV(flavor):
@@ -142,7 +143,7 @@ def allowed_channel(h, fin):
     return ((-1) ** fin[2] == -xi * (-1) ** J) and abs(fin[2] - J) <= 2
 
 
-def predictions(flavor, kappa, variants=('A-NL', 'A-L', 'B-NL', 'B-L')):
+def predictions(flavor, kappa, variants=('NL', 'L', 'pot-NL', 'pot-L')):
     lib = Library(flavor)
     gaps = load_gaps(flavor)
     rows = []
@@ -163,7 +164,7 @@ def predictions(flavor, kappa, variants=('A-NL', 'A-L', 'B-NL', 'B-L')):
                     res[f'{v}_{X}'] = sp[X]
             res['k_MeV'] = E * 1e3
             # magnetic couplings only (g_B_perp and g_B_par: c2 = c4 = kappa, c1 = c3 = 0)
-            for v in ('A-NL', 'B-NL'):
+            for v in ('NL', 'pot-NL'):
                 res[f'mag_{v}'] = gamma(flavor, lib, gaps, h, fin, v, (0.0, kappa, 0.0, kappa))[0]
             rows.append(res)
     return rows

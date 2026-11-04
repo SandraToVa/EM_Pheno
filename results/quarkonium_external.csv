@@ -1,0 +1,6 @@
+id,lat_keV,dlat_keV,source,LO_L_keV,LO_NL_keV,fit_NL_keV,data_keV,ddata_keV,dkappa_eff
+chic0->Jpsi,208.6,0.3,"HSC 2301.08213 (Nf=2+1, mpi=391 MeV)",203.226,200.061,146.761,167.4,11.7402,0.0211178
+chic1->Jpsi,327,10,ETMC 2604.15256: Gamma(ee)=2.869(90) keV / lattice ee:gamma ratio 8.78(2)e-3,428.169,417.289,306.114,277.98,16.7541,-0.114771
+hc->etac,641,68,ETMC 2604.15256: Gamma(ee)=5.45(19) keV / point-like ee:gamma ratio 8.50e-3 (+-10%),905.043,867.621,636.469,499.2,183.395,-0.140464
+chic2->Jpsi,368,5,"CLQCD 2309.09662 (Nf=2, mpi=350 MeV)",575.05,557.335,408.849,368.6,23.0929,-0.187421
+psi2(3823)->chic1,337,27,"CLQCD 2309.09662 (Nf=2, mpi=350 MeV)",385.865,376.147,275.934,nan,nan,-0.0534666

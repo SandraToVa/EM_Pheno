@@ -4,7 +4,7 @@ formulas of the notes and standard results.
   4     hybrid widths vs the lab-basis formula Eq. (eq:lab_Gamma_c), channel by
         channel: Gamma_PiPi, Gamma_SigmaSigma, Gamma_int, for every hybrid type
         and general c1..c4 (R_Pi, R_Sigma of Eqs. (eq:lab_RPi), (eq:lab_RSigma))
-  5-7   local limit of the non-local forms, spin-1 sum rule, gap variant B -> A
+  5-7   local limit of the non-local forms, spin-1 sum rule, potential gaps -> matched gaps
   8     non-local widths vs the multipole formulas (E1, Pi channel)
   9     spin-1 hybrids (Pi channel), 6j recoupling
   10    selection rules of the two channels: l = J states have no Sigma channel,
@@ -68,9 +68,9 @@ for (nf, lf, ni, li) in [(1, 1, 2, 0), (1, 0, 1, 1), (1, 1, 1, 2)]:
         check(f"  sum rule J_i={Ji}", s, G0, 1e-8)
 
 # 4. hybrid -> quarkonium (spin 0) vs the lab-basis formula, channel by channel:
-#    Gamma = 4E^3/(pi^2 sigma) [ (p A1 + s A0)^2/3 + (p2)^2 A2^2/5 ]          (eq:lab_Gamma_c)
+#    Gamma = 4E^3/(pi^2 sigma) [ (p A1 - s A0)^2/3 + (p2)^2 A2^2/5 ]          (eq:lab_Gamma_c)
 #    Gamma_PiPi = 4E^3/(pi^2 sigma)[p^2 A1^2/3 + (p2)^2 A2^2/5], Gamma_SigmaSigma = 4E^3/(pi^2 sigma) s^2 A0^2/3,
-#    Gamma_int = 4E^3/(pi^2 sigma) 2 p s A1 A0/3
+#    Gamma_int = -4E^3/(pi^2 sigma) 2 p s A1 A0/3
 sig = P.sigma
 def pK(K, J, l):
     """p^(K)_l of Eq. (eq:lab_p)"""
@@ -94,7 +94,7 @@ def lab_split(H, J, f, lf, Eq, Ph):
     p, s, p2 = pK(1, J, lf), s_l(J, lf), pK(2, J, lf)
     n = 4 * Eq ** 3 / (np.pi ** 2 * sig)
     out = {'Pi': n * ((p * A1) ** 2 / 3 + (p2 * A2) ** 2 / 5), 'Sigma': n * (s * A0) ** 2 / 3,
-           'int': n * 2 * p * s * A1 * A0 / 3}
+           'int': -n * 2 * p * s * A1 * A0 / 3}
     out['total'] = out['Pi'] + out['Sigma'] + out['int']
     return out
 HTYPES = [(0, 'sigma', 1), (1, 'plus', 1), (1, 'plus', 2), (1, 'minus', 1), (2, 'plus', 1), (2, 'minus', 1)]
@@ -134,11 +134,11 @@ for Ji in (0, 1, 2):
     s = sum(width(lib.quarkonium(1, 0, S=1, J=1), Hs, 0.9, P, r) for _ in [0])
     check(f"spin-1 (s/d)1 Jcal={Ji} -> 1S(J=1) equals spin-0 width", s, G0, 1e-8)
 
-# 7. 'lattice' gap variant with dV = pi/r reproduces the 'string' variant
+# 7. 'potential' gap variant with dV = pi/r reproduces the 'matched' variant
 k = lib.hybrid_index(1, 'plus', 1); H = lib.hybrid(1, k); f = lib.quarkonium(1, 0)
 for nl in (False, True):
-    Ps = Params('c', nonloc=nl); Pl = Params('c', nonloc=nl, gap='lattice', dV=np.pi / r, dVS=3 * np.pi / r)
-    check(f"gap lattice(dV=pi/r, dVS=3pi/r) == string, nonlocal={nl}", width(f, H, 0.9, Pl, r), width(f, H, 0.9, Ps, r), 1e-10)
+    Ps = Params('c', nonloc=nl); Pl = Params('c', nonloc=nl, gap='potential', dV=np.pi / r, dVS=3 * np.pi / r)
+    check(f"gap potential(dV=pi/r, dVS=3pi/r) == matched, nonlocal={nl}", width(f, H, 0.9, Pl, r), width(f, H, 0.9, Ps, r), 1e-10)
 
 # 8. non-local widths vs the closed multipole formulas of the notes (hybrids: Pi channel)
 #    (quarkonium: Gamma = c1^2 E^3/pi sum_K C(lKl',00)^2/(2K+1) J_K^2;
@@ -231,11 +231,11 @@ from scipy.integrate import quad
 for (rr, q) in [(3.0, 0.4), (6.0, 1.1), (2.0, 4.0)]:
     Q = q * rr
     for (c2, c3, c4) in [(1, 0, 0), (0, 1, 0), (0, 0, 1)]:
-        rhoB = lambda z: np.pi / (4 * sig * rr ** 2) * ((8 * c4 + c2) * np.cos(np.pi * z / rr) + 3 * c2 * np.cos(3 * np.pi * z / rr))
-        rhoE = lambda z: -c3 / (4 * sig * rr) * (3 * np.cos(np.pi * z / rr) + np.cos(3 * np.pi * z / rr))
+        rhoB = lambda z: -np.pi / (4 * sig * rr ** 2) * ((8 * c4 + c2) * np.cos(np.pi * z / rr) + 3 * c2 * np.cos(3 * np.pi * z / rr))
+        rhoE = lambda z: c3 / (4 * sig * rr) * (3 * np.cos(np.pi * z / rr) + np.cos(3 * np.pi * z / rr))
         num = quad(lambda z: (rhoB(z) + q * rhoE(z)) * np.cos(q * z), -rr / 2, rr / 2)[0]
-        cl = (4 * c4 / (sig * rr) * fH(Q) + c2 / (2 * sig * rr) * (fH(Q) - fH3(Q))
-              - 4 * c3 / (3 * np.pi * sig) * q * (9 * fH(Q) - fH3(Q)) / 8)
+        cl = (-4 * c4 / (sig * rr) * fH(Q) - c2 / (2 * sig * rr) * (fH(Q) - fH3(Q))
+              + 4 * c3 / (3 * np.pi * sig) * q * (9 * fH(Q) - fH3(Q)) / 8)
         check(f"FT rho_Sigma r={rr} q={q} (c2,c3,c4)={(c2, c3, c4)}", num, cl, 1e-9)
 
 # 14. spin-1 hybrids with both channels: 6j recoupling of the rank-1 (Pi + Sigma) and rank-2 widths
@@ -247,7 +247,7 @@ for (J, n, lf) in [(1, 1, 0), (1, 1, 2), (2, 1, 1)]:
     A1 = c2 * I0 - Eq / (2 * np.pi) * (c1 + c3) * I1; A2 = Eq / (2 * np.pi) * (c1 - c3) * I1
     A0 = 2 * np.sqrt(np.pi / sig) * (c4 * np.sum(cf * cSig / r) - c3 * Eq / (3 * np.pi) * np.sum(cf * cSig))
     u, v = ps(J, lf)
-    GK = {1: 8 * Eq ** 3 / (np.pi ** 2 * sig) * (u * A1 + v * A0) ** 2 / 6,
+    GK = {1: 8 * Eq ** 3 / (np.pi ** 2 * sig) * (u * A1 - v * A0) ** 2 / 6,
           2: 8 * Eq ** 3 / (np.pi ** 2 * sig) * wK(2, J, lf) / 5 * A2 ** 2}
     for Ji in range(abs(J - 1), J + 2):
         for Jf in range(abs(lf - 1), lf + 2):

@@ -21,29 +21,29 @@ Operators
           'Sigma' = the longitudinal operators (g_B_par, g_E^Sigma),
                     which only see rhat.psi                          [Sigma_u^-].
         Each channel has its own string gap Delta_X and its own on-shell zero
-        (E_q = Delta_X). Table tab:HQ_lef, with the relative phase of the two
-        channels fixed by the r -> 0 limit, g_B_par(0) = g_B_perp(0) for c4 = c2
-        (both real, same sign):
+        (E_q = Delta_X). Table tab:HQ_lef, with the phase convention of the notes
+        (Sec. sec:phase_conv, Eq. eq:phase_final, |H^0> <-> -i|Sigma_u^->): all LEFs
+        real, g_B_par and g_B_perp of opposite sign for c4 = c2:
             g_B_perp = 2 c2/sqrt(pi sigma),  g_E_par = -2 c3 r/(pi sqrt(pi sigma)),
             g_E_perp = 2 c1 r/(pi sqrt(pi sigma)),
-            g_B_par  = 4 c4/(sigma r),       g_E^Sigma = -4 c3/(3 pi sigma).
+            g_B_par  = -4 c4/(sigma r),      g_E^Sigma = 4 c3/(3 pi sigma).
 * 'QH'  quarkonium -> hybrid, the hermitian-conjugate vertex (needed for mixed
         final states): the terms with an explicit i change sign.
 
 Gaps (Params.gap)
 -----------------
-'string'  (variant A)  Delta_Pi = pi/r,  Delta_Sigma = 3 pi/r  (EST, as matched).
-'lattice' (variant B)  Delta_Pi = dV = V_Pi_u - V_Sigma_g,
+'matched'   (default)  Delta_Pi = pi/r,  Delta_Sigma = 3 pi/r  (EST, as matched).
+'potential' (appendix) Delta_Pi = dV = V_Pi_u - V_Sigma_g,
                        Delta_Sigma = dVS = V_Sigma_u - V_Sigma_g (from QQbarSpectrum).
 The same rule is applied to both channels X = Pi, Sigma (n_Pi = 1, n_Sigma = 3):
 the channel amplitude is multiplied by s_X = sqrt(Delta_X r/(n_X pi)) and
-E r/(n_X pi) -> E/Delta_X. For 'string', s_X = 1.
+E r/(n_X pi) -> E/Delta_X. For 'matched', s_X = 1.
 
 Non-local form factors (q_z = E cos theta, x = q_z r)
 ------------------------------------------------------
     FF_E1 = j0(x/2),  f = pi^2 cos(x/2)/(pi^2 - x^2),  F3 = 9pi^2 cos(x/2)/(9pi^2 - x^2).
 Pi channel: all three densities ~ cos(pi z/r) -> f.
-Sigma channel (Eq. eq:rhoSigma): FT[rho_B_par] = g_B_par f + (c2/(2 sigma r)) (f - F3),
+Sigma channel (Eq. eq:rhoSigma): FT[rho_B_par] = g_B_par f - (c2/(2 sigma r)) (f - F3),
 FT[rho_E^Sigma] = g_E^Sigma (9 f - F3)/8. The c2 piece integrates to zero.
 
 Heavy-quark spin is a spectator: for |(Li S) Ji Mi> -> |(Lf S) Jf Mf>
@@ -106,12 +106,12 @@ class Params:
     """Couplings and model choices.
     kappa_Q : g_E1 = kappa_Q e e_Q r (quarkonium E1).
     kH      : (c1, c2, c3, c4) of the hybrid vertex in units of e e_Q; a 3-tuple
-              sets c4 = c2 (the r -> 0 condition g_B_par(0) = g_B_perp(0)).
-    gap     : 'string' (A) or 'lattice' (B); 'lattice' needs dV and dVS on the mesh.
+              sets c4 = c2 (single string coupling).
+    gap     : 'matched' (default) or 'potential' (appendix); 'potential' needs dV and dVS on the mesh.
     nonloc  : non-local (string) densities instead of the multipole-expanded LEFs."""
 
     def __init__(self, flavor, kappa_Q=1.0, kH=(1.0, 1.0, 1.0, 1.0), sigma=0.21,
-                 nonloc=False, include_HH=True, include_QH=True, gap='string', dV=None, dVS=None):
+                 nonloc=False, include_HH=True, include_QH=True, gap='matched', dV=None, dVS=None):
         self.flavor = flavor
         self.eeQ = E_CHARGE * CHARGE[flavor]
         self.kappa_Q = kappa_Q
@@ -123,17 +123,17 @@ class Params:
         self.nonloc = nonloc
         self.include_HH = include_HH
         self.include_QH = include_QH
-        if gap not in ('string', 'lattice'):
+        if gap not in ('matched', 'potential'):
             raise ValueError(gap)
         self.gap = gap
         self.dV = None if dV is None else np.asarray(dV)
         self.dVS = None if dVS is None else np.asarray(dVS)
-        if gap == 'lattice' and (self.dV is None or self.dVS is None):
-            raise ValueError('gap=lattice needs both static gaps dV (Pi_u) and dVS (Sigma_u^-)')
+        if gap == 'potential' and (self.dV is None or self.dVS is None):
+            raise ValueError("gap='potential' needs both static gaps dV (Pi_u) and dVS (Sigma_u^-)")
 
     def gaps(self, r):
         """Delta_Pi(r), Delta_Sigma(r) on the mesh"""
-        if self.gap == 'string':
+        if self.gap == 'matched':
             return {'Pi': np.pi / r, 'Sigma': 3.0 * np.pi / r}
         return {'Pi': self.dV, 'Sigma': self.dVS}
 
@@ -162,11 +162,11 @@ def _radial_weights(E, P, r):
     non-local form factor on the (r, cos theta) grid."""
     g = grid()
     D = P.gaps(r)
-    s = {X: np.sqrt(D[X] * r / (N_GAP[X] * np.pi)) for X in HYBRID_CHANNELS}   # = 1 for 'string'
+    s = {X: np.sqrt(D[X] * r / (N_GAP[X] * np.pi)) for X in HYBRID_CHANNELS}   # = 1 for 'matched'
     sq = np.sqrt(np.pi / P.sigma)
     w = {'B': s['Pi'], 'Ea': s['Pi'] * E / D['Pi'], 'Eb': s['Pi'] * E / D['Pi'],
-         'B4': 2.0 * sq / r * s['Sigma'], 'B2': 0.25 * sq / r * s['Sigma'],
-         'E3': -2.0 * sq / r * s['Sigma'] * E / D['Sigma']}
+         'B4': -2.0 * sq / r * s['Sigma'], 'B2': -0.25 * sq / r * s['Sigma'],
+         'E3': 2.0 * sq / r * s['Sigma'] * E / D['Sigma']}
     x = E * np.outer(r, g.costh)
     if P.nonloc:
         f, F3 = ff_H(x), ff_H3(x)

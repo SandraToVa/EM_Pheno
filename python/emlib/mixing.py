@@ -41,7 +41,7 @@ FINAL = {
 }
 
 
-def table(kappa_Q, kappa_H, variants=('A-NL', 'B-NL')):
+def table(kappa_Q, kappa_H, variants=('NL', 'pot-NL')):
     lib = Library('c', mix=True)
     dV = load_dV('c'); dVS = load_dVS('c')
     from .hybrids import VARIANTS
@@ -67,7 +67,7 @@ def table(kappa_Q, kappa_H, variants=('A-NL', 'B-NL')):
     return rows
 
 
-def hindered_psi2S_etac(kappa_H, variants=('A-NL', 'B-NL')):
+def hindered_psi2S_etac(kappa_H, variants=('NL', 'pot-NL')):
     """psi(2S) -> gamma eta_c(1S) through the hybrid admixtures: the two paths
     (spin-0 hybrid component of psi(2S) -> eta_c; psi(2S) -> spin-1 hybrid
     component of eta_c) and their coherent sum."""
@@ -96,12 +96,13 @@ def hindered_psi2S_etac(kappa_H, variants=('A-NL', 'B-NL')):
 
 
 # experimental gamma eta_c(1S) widths/limits (keV) used with the scan
-# (RPP 2026: B x Gamma_tot; 90% CL limit for psi(3770))
-GAMMA_ETAC_EXP = {'J/psi': (1.31, 0.33), 'psi(2S)': (1.05, 0.15), 'psi(3770)': ('UL', 21.8)}
+# (RPP 2026: B x Gamma_tot; psi(3770): 90% CL limit of BESIII, arXiv:2609.33606)
+GAMMA_ETAC_EXP = {'J/psi': (1.31, 0.33), 'psi(2S)': (1.05, 0.15), 'psi(3770)': ('UL', 5.5)}
 
 
-def c4_scan(kappa, ts, variants=('B-NL', 'A-NL')):
+def c4_scan(kappa, ts, variants=('pot-NL', 'NL')):
     """Gamma(V -> gamma eta_c(1S)) of the mixed 1-- states for c1 = c2 = c3 = kappa e e_c
+    (v4: kappa = dkappa_c)
     and c4 = t kappa e e_c (t = ts). c4 is the only matching coefficient of the
     hybrid vertex that is not shared by the two channels (it fixes g_B_par), so the
     scan locates the value allowed by data."""

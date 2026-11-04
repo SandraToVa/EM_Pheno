@@ -1,6 +1,36 @@
-# EM transitions — phenomenology code, version 3
+# EM transitions — phenomenology code, v4 (κ_Q = 1 + δκ_Q, external comparisons)
 
-**EM_Pheno_v3** treats the hybrid vertex as one object with two channels on the
+**EM_Pheno_v4** = EM_Pheno_v3 with the E1 normalization written as κ_Q = 1 + δκ_Q and the hybrid
+vertex normalized with δκ_Q, plus comparisons with other lattice calculations and hybrid models.
+The amplitude engine (`emlib/amplitudes.py`, `states.py`, `angular.py`, `hybrids.py`) and the tests are
+those of v3: every width at κ_H = 1 is unchanged. v3 is kept unchanged in `../EM_Pheno_v3`.
+
+## Changes with respect to v3
+
+* `python/run_all.py`:
+  * δκ_Q = κ_Q − 1 stored for every E1 fit (column `dkappa` of `quarkonium_fits.csv`; `dkappa_c`,
+    `dkappa_b` in `summary.json`).
+  * Hybrid vertex normalized with δκ_Q, c_i = δκ_Q e e_Q (v3: κ_Q e e_Q). Hybrid widths are stored at
+    κ_H = 1 and at δκ_Q (`*_at_dk` columns of `hybrid_predictions.csv`).
+  * c4/c windows, κ_H limits from the mixed states and the lattice comparison computed at δκ_c
+    (`summary.json`: `c4_range_at_dkappa_c` replaces `c4_range_at_kappa_c`).
+  * New section "external comparisons": `results/quarkonium_external.csv` (E1 widths of HSC, ETMC
+    and CLQCD against our LO and fitted widths, with δκ_eff) and `results/hybrid_external.csv`
+    (Coulomb-gauge model, arXiv:1402.5863; lattice η_c1, arXiv:2306.12884).
+* `python/emlib/mixing.py`: ψ(3770) → γη_c limit updated to BESIII arXiv:2609.33606 (< 5.5 keV;
+  v3 used the PDG bound, 8×10⁻⁴ × 27.2 MeV ≈ 21.8 keV).
+* `python/emlib/lattice.py`: documentation only (widths at κ_H = 1 and at δκ_c).
+* `python/make_tables.py`: tables written in terms of δκ_Q; new `tab_quarkonium_lattice`,
+  `tab_hybrid_models`, `tab_hybrid_summary`; `tab_lattice_channels` no longer produced.
+* `python/figures.py`: only `fig_LEFs_B`, `fig_hybrid_integrand`, `fig_lattice_hybrids`,
+  `fig_potential_gaps` are produced (`fig_c2_c13_plane`, `fig_c4_scan`, `fig_c4_scan_mixed`,
+  `fig_channel_plane` removed).
+
+----
+
+## v3: one hybrid vertex with two channels (inherited by all later versions)
+
+**EM_Pheno_v3** (and every later version) treats the hybrid vertex as one object with two channels on the
 same footing, as in the lab-basis notes (Secs. "Hybrid Amplitude" and "Hybrid
 Decay Width", Eqs. eq:lab_vertex, eq:lab_M, eq:lab_Gamma_c):
 
@@ -17,13 +47,13 @@ width is returned with its exact split
 so channel strengths κ_Π, κ_Σ enter as Γ = κ_Π² Γ_ΠΠ + κ_Σ² Γ_ΣΣ + κ_Πκ_Σ Γ_int.
 There is no on/off switch for Σ.
 
-Changes with respect to v2 (v2 is kept unchanged as a reference):
+Changes of v3 with respect to v2 (v2 is kept unchanged as a reference):
 
 * `amplitudes.py`: the vertex is a table of terms (`HQ_TERMS`) grouped by channel;
   one gap rule for both channels (`Params.gaps`: π/r, 3π/r in A; ΔV, ΔV_Σ in B);
   `channel_amplitudes`, `width_split`. `sigma_mode` ('EST'/'norm'/'off') removed:
-  the LEFs are those of the notes, with the relative Π–Σ phase fixed by the
-  r→0 limit g_B∥(0) = g_B⊥(0) (real, same sign).
+  the LEFs are those of Table tab:HQ_lef, with the phase convention of the notes
+  (Sec. sec:phase_conv, |H⁰⟩ ↔ −i|Σu⁻⟩): all real, g_B∥ = −4c4/(σr) and g_B⊥ of opposite sign for c4 = c2.
 * `states.py`: `pi_sigma_projections` (R_Π, R_Σ, P_Π, P_Σ); notation of the notes
   (see "Angular-momentum notation" below).
 * `hybrids.py`: `gamma_split`, `channel_bounds` (κ_H, κ_Π, κ_Σ limits),
@@ -63,7 +93,7 @@ Changes with respect to v2 (v2 is kept unchanged as a reference):
 ----
 ----
 
-# EM transitions — phenomenology code
+## General description of the code (from v1)
 
 Phenomenology of one-photon transitions in the BOEFT (quarkonium E1 and
 hybrid → quarkonium + γ) for the EM-transitions paper. The `QQbarSpectrum`
@@ -85,7 +115,7 @@ tests/test_engine.py           checks of the amplitude engine (must print ALL PA
 Run:
 
 ```matlab
-% in MATLAB (or octave-cli), from EM_Pheno_v3/matlab
+% in MATLAB (or octave-cli), from EM_Pheno_v4/matlab
 exportWavefunctions('<path>/Ruben Mixing/QQbarSpectrum', '../data')
 ```
 ```bash
@@ -110,7 +140,7 @@ the tests also use sympy.
   integration of M = ∫d³r ψ_B† O_h ψ_A for E1 (g_E1 = κ e e_Q r) and for the
   1+- hybrid vertex of Eq. eq:lab_vertex (Π and Σ channels), local or non-local
   (j0(q_z r/2); f = π²cos(q_z r/2)/(π²−q_z²r²) and F3 for the Σ densities), with
-  gaps π/r, 3π/r (variant A, as matched) or ΔV(r), ΔV_Σ(r) (variant B). Heavy-quark spin is a spectator; states can
+  gaps π/r, 3π/r (`gap='matched'`, variants NL, L: the results of Sec. 5) or ΔV(r), ΔV_Σ(r) (`gap='potential'`, variants pot-NL, pot-L: appendix "Gaps from the BOEFT static potentials"). Heavy-quark spin is a spectator; states can
   have any number of components (quarkonium/hybrid, Σ/Π channels, spin 0/1),
   so mixed states and spin-1 multiplets need no extra angular algebra.
   Validated against the quarkonium E1 widths, the 6j spin-1 formulas, the
@@ -127,17 +157,25 @@ the tests also use sympy.
   predictions with the Π/Σ/interference split, κ_H, κ_Π, κ_Σ limits from BESIII
   γη_c, quadratic forms in (c1,c2,c3,c4), c4 scans.
 
-## Main results (October 2026, v3)
+## v4 (October 27, 2026): κ_Q = 1 + δκ_Q
+
+The E1 normalization is fitted as κ_Q = 1 + δκ_Q (LO = 1, all corrections in δκ_Q), and the
+hybrid vertex, a correction computed with our model, is normalized with δκ_Q alone:
+c_i = δκ_Q e e_Q (v3 used κ_Q). Hybrid widths are stored at κ_H = 1 and at δκ_Q
+(`*_at_dk` columns of `hybrid_predictions.csv`); everything compared with BESIII, lattice and
+the thesis uses δκ_Q. ψ(3770) → γη_c limit updated to BESIII arXiv:2609.33606 (< 5.5 keV).
+v3 is kept unchanged in `../EM_Pheno_v3`.
+
+## Main results (v4, matched gaps π/r, 3π/r, non-local form)
 
 | quantity | value |
 |---|---|
-| κ_b (g_E1 = κ e e_b r) | 0.998 ± 0.040 (ε = 4%) |
-| κ_c | 0.856 +0.031 −0.028 (core), 0.828 with ψ(3770), ψ2(3823) |
-| hybrid LEFs | c1 = c2 = c3 = c4 = κ_H e e_Q; BESIII γη_c: κ_H < 0.94, 0.63 (B, NL), < 0.04 (A) |
-| channels (B, NL, ψ(4040)) | Γ_ΠΠ = 57, Γ_ΣΣ = 188, Γ_int = −208 keV at κ_H = 1: strong destructive interference |
-| c4 at κ_c (B, NL) | 0.81 < c4/c < 0.96 from the hybrid candidates; 0.08–0.2 from J/ψ, ψ(2S), ψ(3770) → γη_c |
-| lattice R = Γ(η_c1)/Γ(Y) | A: Π channel alone 1.61, both channels 0.90; B: 0.25 (lattice 1.78 ± 0.24, or 3.5 from F(0)) |
-| X(3872) c c̄ probability | Z ≈ 0.44 ± 0.19 (from γJ/ψ), Z ≲ 0.3 (from ψ(4160)→γX) |
+| δκ_b | −0.002 ± 0.040 (ε = 4%): hybrid radiative widths of bottomonium vanish within errors |
+| δκ_c | −0.144 +0.031 −0.028 (core, ε = 7%); −0.172 with ψ(3770), ψ2(3823) |
+| ψ(4040) → γη_c at κ_H = δκ_c | 219 keV (Γ_ΠΠ 13, Γ_ΣΣ 341, Γ_int −135), 6.6 × BESIII limit; |κ_H| < 0.06 |
+| c4/c at c = δκ_c | 0.08–0.59 (BESIII); 0.08–0.31 with J/ψ, ψ(2S), ψ(3770) → γη_c (mixing appendix) |
+| lattice R = Γ(η_c1)/Γ(Y) | Π channel alone 1.61, both 0.78 (lattice 1.78 ± 0.23); 1.0–2.6 for c4/c = 0.1–0.25 |
+| lattice widths | need κ_Π ≈ 0.46–0.94, i.e. 3–6.5 × |δκ_c| |
 
 See `../TeX file/tex_pheno/pheno_standalone.pdf` for the discussion. A detailed description of every file (QQbarSpectrum summary, exporter,
 `emlib` modules, scripts, tests and libraries) is the appendix

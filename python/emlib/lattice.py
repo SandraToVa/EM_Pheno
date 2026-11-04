@@ -109,7 +109,8 @@ LAT_SYST = 0.30
 
 
 def hybrid_lattice_table(flavor_lib, gaps, hyb, variants, kappa):
-    """Our LO widths (keV) at the kinematics of each lattice determination, and
+    """Our LO widths (keV) at the kinematics of each lattice determination (at kappa_H = 1
+    and at kappa_H = kappa; v4: kappa = dkappa_c), and
     the kappa_H that reproduces it; plus the S=1 partners at the J&S kinematics."""
     from . import hybrids as HY
     rows = []
@@ -147,7 +148,7 @@ def gamma_vs_Eq(lib, gaps, hyb, variants, Es):
     return out
 
 
-def channel_solutions(rows, variants=('A-NL', 'A-L', 'B-NL', 'B-L')):
+def channel_solutions(rows, variants=('NL', 'L', 'pot-NL', 'pot-L')):
     """Channel strengths (kappa_Pi, kappa_Sigma) that reproduce two lattice widths of the
     same data set at once, Gamma = kappa_Pi^2 G_PiPi + kappa_Sigma^2 G_SigmaSigma +
     kappa_Pi kappa_Sigma G_int (G at kappa = 1). All solutions with kappa_Pi > 0."""
