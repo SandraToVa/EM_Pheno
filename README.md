@@ -1,30 +1,23 @@
-# EM transitions — phenomenology code, v4 (κ_Q = 1 + δκ_Q, external comparisons)
+# EM transitions — phenomenology code, v5 (O(k/m) corrections to E1)
 
-**EM_Pheno_v4** = EM_Pheno_v3 with the E1 normalization written as κ_Q = 1 + δκ_Q and the hybrid
-vertex normalized with δκ_Q, plus comparisons with other lattice calculations and hybrid models.
-The amplitude engine (`emlib/amplitudes.py`, `states.py`, `angular.py`, `hybrids.py`) and the tests are
-those of v3: every width at κ_H = 1 is unchanged. v3 is kept unchanged in `../EM_Pheno_v3`.
+**EM_Pheno_v5** = EM_Pheno_v4 + optional O(k/m_Q) corrections to the quarkonium E1 amplitudes,
+from Eichten et al. (EGTKLY, Phys. Rev. D 21, 203 (1980); App. E of the notes). The hybrid part,
+the amplitude engine and the tests are those of v4. v4 is kept unchanged in `../EM_Pheno_v4`.
+Note: in v7 the spin term of this correction is removed (it is cancelled by the 1/m² c_S^em term).
 
-## Changes with respect to v3
+## Changes with respect to v4
 
-* `python/run_all.py`:
-  * δκ_Q = κ_Q − 1 stored for every E1 fit (column `dkappa` of `quarkonium_fits.csv`; `dkappa_c`,
-    `dkappa_b` in `summary.json`).
-  * Hybrid vertex normalized with δκ_Q, c_i = δκ_Q e e_Q (v3: κ_Q e e_Q). Hybrid widths are stored at
-    κ_H = 1 and at δκ_Q (`*_at_dk` columns of `hybrid_predictions.csv`).
-  * c4/c windows, κ_H limits from the mixed states and the lattice comparison computed at δκ_c
-    (`summary.json`: `c4_range_at_dkappa_c` replaces `c4_range_at_kappa_c`).
-  * New section "external comparisons": `results/quarkonium_external.csv` (E1 widths of HSC, ETMC
-    and CLQCD against our LO and fitted widths, with δκ_eff) and `results/hybrid_external.csv`
-    (Coulomb-gauge model, arXiv:1402.5863; lattice η_c1, arXiv:2306.12884).
-* `python/emlib/mixing.py`: ψ(3770) → γη_c limit updated to BESIII arXiv:2609.33606 (< 5.5 keV;
-  v3 used the PDG bound, 8×10⁻⁴ × 27.2 MeV ≈ 21.8 keV).
-* `python/emlib/lattice.py`: documentation only (widths at κ_H = 1 and at δκ_c).
-* `python/make_tables.py`: tables written in terms of δκ_Q; new `tab_quarkonium_lattice`,
-  `tab_hybrid_models`, `tab_hybrid_summary`; `tab_lattice_channels` no longer produced.
-* `python/figures.py`: only `fig_LEFs_B`, `fig_hybrid_integrand`, `fig_lattice_hybrids`,
-  `fig_potential_gaps` are produced (`fig_c2_c13_plane`, `fig_c4_scan`, `fig_c4_scan_mixed`,
-  `fig_channel_plane` removed).
+* `python/emlib/quarkonium.py`: `M_QUARK` (m_c = 1.496, m_b = 4.88 GeV) and
+  `rel_delta(init, final, k)` = k/(8 m_Q) (s [J_P(J_P+1) − 4] − Δl/3), Δl = l_i(l_i+1) − l_f(l_f+1),
+  s = −1 for ³P_J → ³S₁, +1 for ³S₁ → ³P_J (spin term only for triplet S ↔ P; D → P: only Δl).
+  `predict_row(..., rel)` and `Fitter(..., rel)`: rel=True multiplies every width by (1 + δ)².
+* `python/run_all.py`: the E1 fits are done with rel=False and rel=True (column `rel` in
+  `quarkonium_fits.csv` and `quarkonium_pulls.csv`); the pulls file also stores the ε = 0
+  predictions and pulls (`pred_eps0`, `pull_eps0`). The hybrid normalization keeps the rel=False fits.
+* `python/make_tables.py`: new `tab_kappa_rel`, `tab_E1_rel`; `tab_E1_fit` gets the ε = 0 columns.
+* `python/figures.py`: the E1 ratio figure uses the rel=False rows.
+* Result (charm core, NL): χ²/ndf at ε = 0 161/6 → 72/6, ε 0.073 → 0.054, δκ_c −0.144 → −0.143;
+  bottomonium unchanged.
 
 ----
 
@@ -156,6 +149,18 @@ the tests also use sympy.
 * **Hybrids** (`emlib/hybrids.py`), **mixing** (`emlib/mixing.py`):
   predictions with the Π/Σ/interference split, κ_H, κ_Π, κ_Σ limits from BESIII
   γη_c, quadratic forms in (c1,c2,c3,c4), c4 scans.
+
+## v5 (October 28, 2026): relativistic corrections to E1
+
+`emlib/quarkonium.py`: `rel_delta(init, final, k)` = O(k/m_Q) correction of the E1 amplitude
+from EGTKLY (Eichten et al. 1980; App. E of the notes),
+delta = k/(8 m_Q) (s [J_P(J_P+1) - 4] - Delta_l/3), s = -1 for 3P_J -> 3S_1, +1 for 3S_1 -> 3P_J,
+Delta_l = l_i(l_i+1) - l_f(l_f+1); spin term only for triplet S <-> P. Switch: `rel=True` in
+`predict_row` / `Fitter` (default False). `run_all.py` fits both (column `rel`); the
+hybrid normalization keeps using the rel=False fits. New tables: `tab_E1_rel`, `tab_kappa_rel`;
+`tab_E1_fit` now also has the epsilon=0 predictions and pulls.
+Result (charm core, NL): chi2/ndf at epsilon=0 161/6 -> 72/6, epsilon 0.073 -> 0.054,
+dkappa_c -0.144 -> -0.143; bottom unchanged (hindered transitions dominate).
 
 ## v4 (October 27, 2026): κ_Q = 1 + δκ_Q
 

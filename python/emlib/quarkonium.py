@@ -17,10 +17,36 @@ def build_state(lib, label):
     return st
 
 
-def predict_row(row, libs, nonloc=False, kappa=1.0):
+# heavy-quark masses of the QQbarSpectrum wave functions (GeV), used in the 1/m relativistic terms
+M_QUARK = {'c': 1.496, 'b': 4.88}
+
+
+def rel_delta(init, final, E):
+    """O(k/m) relativistic correction to the E1 dipole amplitude (EGTKLY, Eichten et al.
+    1980, Eq. (2.7); App. E of the notes), A -> A (1 + delta):
+        delta = k/(8 m_Q) * ( s [J_P (J_P + 1) - 4] - Delta_l / 3 ),
+    Delta_l = l_i (l_i + 1) - l_f (l_f + 1), k = photon energy.  The spin-orbit term
+    (s = -1 if the P-wave state is the initial one, +1 if it is the final one) is included
+    for spin-triplet S <-> P transitions only; it vanishes for spin singlets and is not
+    included (no closed form in EGTKLY) for transitions between two orbitally excited
+    states (D -> P). For P -> S the result coincides with the O(k/m) terms of
+    Brambilla, Pietrulewicz, Vairo (2012), Eqs. (80), (81), (85), once their factor
+    (1 - k/M) is included."""
+    fl, ni, li, Si, Ji = STATES[init]
+    _, nf, lf, Sf, Jf = STATES[final]
+    dl = li * (li + 1) - lf * (lf + 1)
+    spin = 0.0
+    if Si == 1 and {li, lf} == {0, 1}:
+        JP, sgn = (Ji, -1.0) if li == 1 else (Jf, +1.0)
+        spin = sgn * (JP * (JP + 1) - 4)
+    return E / (8.0 * M_QUARK[fl]) * (spin - dl / 3.0)
+
+
+def predict_row(row, libs, nonloc=False, kappa=1.0, rel=False):
     """Returns (pred, pred_abs) at kappa (pred_abs: no-cancellation width used
     for the theory error).  Widths in keV; ratios dimensionless (and the
-    corresponding 'abs' ratio pair)."""
+    corresponding 'abs' ratio pair).  rel=True multiplies each width by
+    (1 + delta)^2, delta = rel_delta(...): the O(k/m) relativistic corrections."""
     lib = libs[row['flavor']]
     P = Params(row['flavor'], kappa_Q=kappa, nonloc=nonloc)
     i = build_state(lib, row['init'])
@@ -29,6 +55,9 @@ def predict_row(row, libs, nonloc=False, kappa=1.0):
         E = photon_energy(MASS[row['init']], MASS[flab])
         g = width(f, i, E, P, lib.r) * GEV2KEV
         ga = width(f, i, E, P, lib.r, absval=True) * GEV2KEV
+        if rel:
+            fac = (1.0 + rel_delta(row['init'], flab, E)) ** 2
+            g, ga = g * fac, ga * fac
         return g, ga
     if row['kind'] in ('width', 'ul_width'):
         return G(row['final'])
@@ -37,10 +66,11 @@ def predict_row(row, libs, nonloc=False, kappa=1.0):
 
 
 class Fitter:
-    def __init__(self, libs, rows, nonloc=False):
+    def __init__(self, libs, rows, nonloc=False, rel=False):
         self.rows = rows
         self.nonloc = nonloc
-        self.pred1 = [predict_row(r, libs, nonloc, 1.0) for r in rows]   # at kappa = 1
+        self.rel = rel
+        self.pred1 = [predict_row(r, libs, nonloc, 1.0, rel) for r in rows]   # at kappa = 1
         self.meas = [k for k, r in enumerate(rows) if r['kind'] in ('width', 'ratio')]
         self.uls = [k for k, r in enumerate(rows) if r['kind'] in ('ul_width', 'ul_ratio')]
         self.Cexp = covariance([rows[k] for k in self.meas])

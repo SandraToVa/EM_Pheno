@@ -44,34 +44,56 @@ def fmt(x, err=None):
     return f'{x:.{d}f}({int(round(err * 10 ** d))})' if err > 0 else f'{x:.{d}f}'
 
 
-# --------------------------------------------------------- Table: E1 data / fit
+# --------------------------------------------------------- Tables: E1 data / fits (LO, and LO + relativistic corrections)
+import importlib
+QK = importlib.import_module('emlib.quarkonium')
+from emlib.data import DATA as _DATA, MASS as _MASS
+from emlib.amplitudes import photon_energy as _pe
 pulls = pd.read_csv(os.path.join(RES, 'quarkonium_pulls.csv'))
-rows = []
-for nl in (True,):
-    p = pulls[pulls['nonlocal'] == nl]
-    for _, r in p.iterrows():
-        kind = r['kind']
-        if kind in ('width', 'ratio'):
-            dat = f"{fmt(r['data'])} $\\pm$ {fmt(r['err_exp'])}"
-        else:
-            dat = f"$<${fmt(r['data'])}"
-        rows.append(f"{lab(r['id'])} & {r['set']} & {dat} & {fmt(r['pred_kappa1'])} & "
-                    f"{fmt(r['pred_fit'])} $\\pm$ {fmt(r['err_th'])} & {r['pull']:+.2f} \\\\")
-with open(os.path.join(TEX, 'tab_E1_fit.tex'), 'w') as f:
-    f.write('\n'.join(rows) + '\n\\hline\n')
+_rowd = {r['id']: r for r in _DATA}
 
-fits = pd.read_csv(os.path.join(RES, 'quarkonium_fits.csv'))
-rows = []
-for _, r in fits.iterrows():
-    rows.append(f"${'c' if r['flavor'] == 'c' else 'b'}$ & {r['set']} & {'non-local' if r['nonlocal'] else 'local'} & "
-                f"{int(r['N_meas'])}+{int(r['N_UL'])} & {r['eps_fit']:.3f} & "
-                f"${r['kappa'] - 1:+.3f}^{{+{r['dk_hi']:.3f}}}_{{-{r['dk_lo']:.3f}}}$ & "
-                f"${r['kappa_eps_v2'] - 1:+.3f}^{{+{r['dk_hi_v2']:.3f}}}_{{-{r['dk_lo_v2']:.3f}}}$ & "
-                f"{r['chi2_eps_v2']:.1f}/{int(r['ndf'])} & "
-                f"${r['kappa_eps0'] - 1:+.3f}^{{+{r['dk_hi_eps0']:.3f}}}_{{-{r['dk_lo_eps0']:.3f}}}$ & "
-                f"{r['chi2_eps0']:.0f}/{int(r['ndf'])} \\\\")
-with open(os.path.join(TEX, 'tab_kappa.tex'), 'w') as f:
-    f.write('\n'.join(rows) + '\n\\hline\n')
+
+def _delta(rid):
+    """relativistic amplitude correction(s) of an observable (one value, or two for a ratio)"""
+    r = _rowd[rid]
+    fins = [r['final']] + ([r['final2']] if 'final2' in r else [])
+    ds = [QK.rel_delta(r['init'], f, _pe(_MASS[r['init']], _MASS[f])) for f in fins]
+    return ' / '.join(f'{d:+.3f}' for d in ds)
+
+
+def _dat(r):
+    return f"{fmt(r['data'])} $\\pm$ {fmt(r['err_exp'])}" if r['kind'] in ('width', 'ratio') else f"$<${fmt(r['data'])}"
+
+
+for rel, fname in ((False, 'tab_E1_fit.tex'), (True, 'tab_E1_rel.tex')):
+    p = pulls[(pulls['nonlocal'] == True) & (pulls['rel'] == rel)]
+    rows = []
+    for _, r in p.iterrows():
+        if rel:
+            rows.append(f"{lab(r['id'])} & {r['set']} & {_dat(r)} & {_delta(r['id'])} & {fmt(r['pred_kappa1'])} & "
+                        f"{fmt(r['pred_eps0'])} & {r['pull_eps0']:+.2f} & "
+                        f"{fmt(r['pred_fit'])} $\\pm$ {fmt(r['err_th'])} & {r['pull']:+.2f} \\\\")
+        else:
+            rows.append(f"{lab(r['id'])} & {r['set']} & {_dat(r)} & {fmt(r['pred_kappa1'])} & "
+                        f"{fmt(r['pred_fit'])} $\\pm$ {fmt(r['err_th'])} & {r['pull']:+.2f} & "
+                        f"{fmt(r['pred_eps0'])} & {r['pull_eps0']:+.2f} \\\\")
+    with open(os.path.join(TEX, fname), 'w') as f:
+        f.write('\n'.join(rows) + '\n\\hline\n')
+
+fits_all = pd.read_csv(os.path.join(RES, 'quarkonium_fits.csv'))
+for rel, fname in ((False, 'tab_kappa.tex'), (True, 'tab_kappa_rel.tex')):
+    fits = fits_all[fits_all['rel'] == rel]
+    rows = []
+    for _, r in fits.iterrows():
+        rows.append(f"${'c' if r['flavor'] == 'c' else 'b'}$ & {r['set']} & {'non-local' if r['nonlocal'] else 'local'} & "
+                    f"{int(r['N_meas'])}+{int(r['N_UL'])} & {r['eps_fit']:.3f} & "
+                    f"${r['kappa'] - 1:+.3f}^{{+{r['dk_hi']:.3f}}}_{{-{r['dk_lo']:.3f}}}$ & "
+                    f"${r['kappa_eps_v2'] - 1:+.3f}^{{+{r['dk_hi_v2']:.3f}}}_{{-{r['dk_lo_v2']:.3f}}}$ & "
+                    f"{r['chi2_eps_v2']:.1f}/{int(r['ndf'])} & "
+                    f"${r['kappa_eps0'] - 1:+.3f}^{{+{r['dk_hi_eps0']:.3f}}}_{{-{r['dk_lo_eps0']:.3f}}}$ & "
+                    f"{r['chi2_eps0']:.0f}/{int(r['ndf'])} \\\\")
+    with open(os.path.join(TEX, fname), 'w') as f:
+        f.write('\n'.join(rows) + '\n\\hline\n')
 
 # --------------------------------------------------------- Table: hybrid predictions
 hp = pd.read_csv(os.path.join(RES, 'hybrid_predictions.csv'))
@@ -245,11 +267,11 @@ qe = pd.read_csv(os.path.join(RES, 'quarkonium_external.csv'))
 qtex = {'chic0->Jpsi': r'$\chi_{c0}\to\gamma J/\psi$', 'chic1->Jpsi': r'$\chi_{c1}\to\gamma J/\psi$',
         'hc->etac': r'$h_c\to\gamma\eta_c$', 'chic2->Jpsi': r'$\chi_{c2}\to\gamma J/\psi$',
         'psi2(3823)->chic1': r'$\psi_2(3823)\to\gamma\chi_{c1}$'}
-qsrc = {'chic0->Jpsi': r'HSC~\cite{Delaney:2023fsc}', 'chic1->Jpsi': r'ETMC~\cite{Becirevic:2026gaf}$^a$',
+qsrc = {'chic0->Jpsi': r'HSC~\cite{Delaney:2023fsc}', 'chic1->Jpsi': r'ETMC~\cite{Becirevic:2026gaf}',
         'hc->etac': r'ETMC~\cite{Becirevic:2026gaf}$^b$', 'chic2->Jpsi': r'CLQCD~\cite{Li:2023zig}',
         'psi2(3823)->chic1': r'CLQCD~\cite{Li:2023zig}'}
 rows = []
-for _, r in qe.iterrows():
+for _, r in qe[qe['id'] != 'hc->etac'].iterrows():   # h_c: no lattice photon width available (removed in the text)
     dat = '--' if np.isnan(r['data_keV']) else f"{r['data_keV']:.0f}$\\pm${r['ddata_keV']:.0f}"
     rows.append(f"{qtex[r['id']]} & {qsrc[r['id']]} & {r['lat_keV']:g}({r['dlat_keV']:g}) & {r['LO_L_keV']:.0f} & {r['LO_NL_keV']:.0f} & "
                 f"{r['fit_NL_keV']:.0f} & {dat} & {r['dkappa_eff']:+.3f} \\\\")

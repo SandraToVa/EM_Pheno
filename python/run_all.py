@@ -44,41 +44,47 @@ summary = {}
 libs = {'c': Library('c'), 'b': Library('b')}
 
 # =========================================================== 1. quarkonium E1
+# rel=False: LO E1 (the baseline of the notes); rel=True: LO E1 plus the O(k/m) relativistic
+# corrections of EGTKLY (emlib.quarkonium.rel_delta). The hybrid normalization uses rel=False.
 print('== quarkonium E1 fit')
 fits = []
 pull_rows = []
-for nonloc in (False, True):
-    for fl, sets, tag in (('c', ('core',), 'core'), ('c', ('core', 'ext'), 'core+ext'), ('b', ('core',), 'core')):
-        rows = [r for r in DATA if r['flavor'] == fl and r['set'] in sets]
-        F = Fitter(libs, rows, nonloc)
-        eps = F.eps_for_unit_chi2()
-        k, c, dl, dh = F.fit_kappa(eps)
-        k0, c0, dl0, dh0 = F.fit_kappa(0.3 if fl == 'c' else 0.1)
-        kz, cz, dlz, dhz = F.fit_kappa(0.0)          # experimental errors only (no theory error)
-        fits.append({'flavor': fl, 'set': tag, 'nonlocal': nonloc, 'N_meas': len(F.meas), 'N_UL': len(F.uls),
-                     'eps_fit': eps, 'kappa': k, 'dk_lo': dl, 'dk_hi': dh, 'chi2': c, 'ndf': F.ndf(),
-                     'dkappa': k - 1.0,
-                     'kappa_eps_v2': k0, 'dk_lo_v2': dl0, 'dk_hi_v2': dh0, 'chi2_eps_v2': c0,
-                     'kappa_eps0': kz, 'dk_lo_eps0': dlz, 'dk_hi_eps0': dhz, 'chi2_eps0': cz})
-        print(f"  {fl} {tag:9s} {'NL' if nonloc else 'L '} eps={eps:.3f} kappa={k:.3f} -{dl:.3f}+{dh:.3f}  "
-              f"(eps=v^2: kappa={k0:.3f}, chi2/ndf={c0:.1f}/{F.ndf()}; "
-              f"eps=0: kappa={kz:.3f}, chi2/ndf={cz:.1f}/{F.ndf()})")
-        if tag == 'core+ext' or fl == 'b':
-            tot, chi, chiul, p, sth, pulls, ulp, mod = F.chi2(k, eps, detail=True)
-            for a, kk in enumerate(F.meas):
-                r = rows[kk]
-                pull_rows.append({'nonlocal': nonloc, 'flavor': fl, 'id': r['id'], 'kind': r['kind'],
-                                  'data': r['value'], 'err_exp': float(np.sqrt(F.Cexp[a, a])),
-                                  'pred_kappa1': (F.pred1[kk][0] if r['kind'] == 'width' else F.pred1[kk][0] / F.pred1[kk][2]),
-                                  'pred_fit': p[a], 'err_th': sth[a], 'pull': pulls[a], 'set': r['set']})
-            for a, kk in enumerate(F.uls):
-                r = rows[kk]
-                pull_rows.append({'nonlocal': nonloc, 'flavor': fl, 'id': r['id'], 'kind': r['kind'],
-                                  'data': r['value'], 'err_exp': 0.0,
-                                  'pred_kappa1': (F.pred1[kk][0] if r['kind'] == 'ul_width' else F.pred1[kk][0] / F.pred1[kk][2]),
-                                  'pred_fit': mod[kk][0], 'err_th': mod[kk][1], 'pull': ulp[a], 'set': r['set']})
+for rel in (False, True):
+    for nonloc in (False, True):
+        for fl, sets, tag in (('c', ('core',), 'core'), ('c', ('core', 'ext'), 'core+ext'), ('b', ('core',), 'core')):
+            rows = [r for r in DATA if r['flavor'] == fl and r['set'] in sets]
+            F = Fitter(libs, rows, nonloc, rel=rel)
+            eps = F.eps_for_unit_chi2()
+            k, c, dl, dh = F.fit_kappa(eps)
+            k0, c0, dl0, dh0 = F.fit_kappa(0.3 if fl == 'c' else 0.1)
+            kz, cz, dlz, dhz = F.fit_kappa(0.0)          # experimental errors only (no theory error)
+            fits.append({'rel': rel, 'flavor': fl, 'set': tag, 'nonlocal': nonloc, 'N_meas': len(F.meas), 'N_UL': len(F.uls),
+                         'eps_fit': eps, 'kappa': k, 'dkappa': k - 1.0, 'dk_lo': dl, 'dk_hi': dh, 'chi2': c, 'ndf': F.ndf(),
+                         'kappa_eps_v2': k0, 'dk_lo_v2': dl0, 'dk_hi_v2': dh0, 'chi2_eps_v2': c0,
+                         'kappa_eps0': kz, 'dk_lo_eps0': dlz, 'dk_hi_eps0': dhz, 'chi2_eps0': cz})
+            print(f"  rel={rel!s:5s} {fl} {tag:9s} {'NL' if nonloc else 'L '} eps={eps:.3f} kappa={k:.3f} -{dl:.3f}+{dh:.3f}  "
+                  f"(eps=v^2: kappa={k0:.3f}, chi2/ndf={c0:.1f}/{F.ndf()}; eps=0: kappa={kz:.3f}, chi2/ndf={cz:.1f}/{F.ndf()})")
+            if tag == 'core+ext' or fl == 'b':
+                tot, chi, chiul, p, sth, pulls, ulp, mod = F.chi2(k, eps, detail=True)
+                tot0, chi0_, chiul0, p0, sth0, pulls0, ulp0, mod0 = F.chi2(kz, 0.0, detail=True)
+                for a, kk in enumerate(F.meas):
+                    r = rows[kk]
+                    pull_rows.append({'rel': rel, 'nonlocal': nonloc, 'flavor': fl, 'id': r['id'], 'kind': r['kind'],
+                                      'data': r['value'], 'err_exp': float(np.sqrt(F.Cexp[a, a])),
+                                      'pred_kappa1': (F.pred1[kk][0] if r['kind'] == 'width' else F.pred1[kk][0] / F.pred1[kk][2]),
+                                      'pred_fit': p[a], 'err_th': sth[a], 'pull': pulls[a],
+                                      'pred_eps0': p0[a], 'pull_eps0': pulls0[a], 'set': r['set']})
+                for a, kk in enumerate(F.uls):
+                    r = rows[kk]
+                    pull_rows.append({'rel': rel, 'nonlocal': nonloc, 'flavor': fl, 'id': r['id'], 'kind': r['kind'],
+                                      'data': r['value'], 'err_exp': 0.0,
+                                      'pred_kappa1': (F.pred1[kk][0] if r['kind'] == 'ul_width' else F.pred1[kk][0] / F.pred1[kk][2]),
+                                      'pred_fit': mod[kk][0], 'err_th': mod[kk][1], 'pull': ulp[a],
+                                      'pred_eps0': mod0[kk][0], 'pull_eps0': ulp0[a], 'set': r['set']})
 write_csv('quarkonium_fits.csv', fits)
 write_csv('quarkonium_pulls.csv', pull_rows)
+fits_rel = [f for f in fits if f['rel']]
+fits = [f for f in fits if not f['rel']]
 fitd = {(f['flavor'], f['set'], f['nonlocal']): f for f in fits}
 kc = fitd[('c', 'core', True)]; kb = fitd[('b', 'core', True)]
 summary['kappa_c'] = (kc['kappa'], kc['dk_lo'], kc['dk_hi'], kc['eps_fit'])

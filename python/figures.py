@@ -24,7 +24,7 @@ summ = json.load(open(os.path.join(RES, 'summary.json')))
 
 # ---------------------------------------------------------------- Fig. 1
 pulls = pd.read_csv(os.path.join(RES, 'quarkonium_pulls.csv'))
-p = pulls[(pulls['nonlocal'] == True) & (pulls['kind'] == 'width')].copy()
+p = pulls[(pulls['nonlocal'] == True) & (pulls['rel'] == False) & (pulls['kind'] == 'width')].copy()
 p = p[~p['id'].str.contains(r'\(1P\)$') | ~p['id'].str.startswith('Y3S')]   # drop hindered (shown in table)
 p['ratio'] = p['data'] / p['pred_kappa1']
 p['err'] = p['err_exp'] / p['pred_kappa1']
