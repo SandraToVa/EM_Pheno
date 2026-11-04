@@ -1,0 +1,13 @@
+== E1 fits with the 1/m corrections: Delta l term only (v7) and with the c_F spin term (v5, reference)
+  spin=False L  c core      eps=0.075 dkappa=-0.144 -0.029+0.031 | eps=v^2: -0.149 chi2 0.4/6 | eps=0: -0.212 chi2 186.1/6
+  spin=False L  c core+ext  eps=0.086 dkappa=-0.170 -0.027+0.030 | eps=v^2: -0.174 chi2 1.0/9 | eps=0: -0.222 chi2 193.6/9
+  spin=False L  b core      eps=0.047 dkappa=-0.005 -0.041+0.042 | eps=v^2: -0.001 chi2 3.7/12 | eps=0: -0.164 chi2 108.3/12
+  spin=False NL c core      eps=0.072 dkappa=-0.136 -0.028+0.030 | eps=v^2: -0.140 chi2 0.4/6 | eps=0: -0.201 chi2 176.8/6
+  spin=False NL c core+ext  eps=0.083 dkappa=-0.162 -0.027+0.029 | eps=v^2: -0.166 chi2 0.9/9 | eps=0: -0.212 chi2 183.9/9
+  spin=False NL b core      eps=0.041 dkappa=-0.004 -0.040+0.040 | eps=v^2: +0.000 chi2 3.0/12 | eps=0: -0.166 chi2 105.4/12
+  spin=True  L  c core      eps=0.056 dkappa=-0.151 -0.023+0.024 | eps=v^2: -0.158 chi2 0.3/6 | eps=0: -0.176 chi2 77.5/6
+  spin=True  L  c core+ext  eps=0.072 dkappa=-0.176 -0.024+0.025 | eps=v^2: -0.182 chi2 0.8/9 | eps=0: -0.194 chi2 93.6/9
+  spin=True  L  b core      eps=0.047 dkappa=+0.000 -0.041+0.042 | eps=v^2: +0.003 chi2 3.8/12 | eps=0: -0.157 chi2 107.6/12
+  spin=True  NL c core      eps=0.054 dkappa=-0.143 -0.022+0.024 | eps=v^2: -0.149 chi2 0.3/6 | eps=0: -0.167 chi2 72.1/6
+  spin=True  NL c core+ext  eps=0.070 dkappa=-0.168 -0.023+0.025 | eps=v^2: -0.173 chi2 0.7/9 | eps=0: -0.184 chi2 87.4/9
+  spin=True  NL b core      eps=0.041 dkappa=+0.001 -0.040+0.040 | eps=v^2: +0.004 chi2 3.1/12 | eps=0: -0.159 chi2 105.3/12

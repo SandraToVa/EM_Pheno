@@ -1,4 +1,48 @@
-# EM transitions — phenomenology code, v6 (interpolated g_E1)
+# EM transitions — phenomenology code, v7 (1/m corrections: Delta l term only)
+
+**EM_Pheno_v7** = EM_Pheno_v6_interp with the O(k/m_Q) correction of the E1 amplitude reduced to its
+spin-independent part. The c_F^em spin-orbit term (included in v5 and v6 through the EGTKLY delta) is
+cancelled by the 1/m^2 c_S^em spin-orbit operator of Brambilla, Pietrulewicz, Vairo (2012), Eq. (86):
+with the LO Schroedinger equation, Eq. (119), (I2' + 2 I1)/(m^2 I3) = +-k_LO/(2m), so the two spin
+terms add up to kappa_Q^em k/(2m)[J(J+1)/2 - 2] (their Eq. (122)), beyond our accuracy. Checked with
+our wave functions: the ratio equals k_LO/(2m) to three digits.
+
+    delta_1/m = -(Delta l / 3) k/(8 m_Q),   Delta l = l_i(l_i+1) - l_f(l_f+1)
+              = -k/(12 m) for P -> S, +k/(12 m) for S -> P
+
+## Changes with respect to v6
+
+* `python/emlib/quarkonium.py`: `SPIN = False` (module flag) and `rel_delta(init, final, E, spin=None)`.
+  `spin=True` (or `SPIN = True`) gives back the EGTKLY delta of v5/v6 (checked: the v5 rel=True fits
+  are reproduced exactly).
+* `python/run_rel.py` (new): fits with constant dkappa_Q and the 1/m correction (Tables tab:kappa_rel,
+  tab:E1_rel), both without (v7) and with (reference) the spin term -> `results/rel_fits.csv`,
+  `rel_pulls.csv`, `rel_summary.json`, log `run_rel.log`.
+* `python/run_interp.py`: unchanged except that it now uses the Delta l correction; the lattice
+  comparison uses the constant-dkappa fit with the same correction -> `results/interp_*.csv`.
+* `python/make_tables_v7.py` (replaces make_tables_interp.py) -> in `../TeX file/tex_pheno/`:
+  `tab_kappa_rel_v7.tex`, `tab_E1_rel_v7.tex`, `tab_kappa_interp_v7.tex`, `tab_E1_interp_v7.tex`,
+  `tab_lattice_chic0_v7.tex`, `tab_quarkonium_lattice_v7.tex`. Earlier tables are not touched.
+
+Run, from `python/`: `python3 run_rel.py && python3 run_interp.py && python3 make_tables_v7.py`.
+
+## Main results (non-local, core)
+
+| | eps (chi2/ndf=1) | dkappa or kappa | chi2/ndf at eps = 0 |
+|---|---|---|---|
+| charm, LO (no 1/m) | 0.073 | dkappa = -0.144 | 161/6 |
+| charm, 1/m with spin term (v5/v6) | 0.054 | -0.143 | 72/6 |
+| charm, 1/m Delta l only (v7) | 0.072 | dkappa = -0.136 | 177/6 |
+| charm, interpolated n = 2 (v7) | 0.073 | kappa_c = -0.111 | 164/6 |
+| bottom, 1/m Delta l only (v7) | 0.041 | dkappa = -0.004 | 105/12 |
+| bottom, interpolated n = 2 (v7) | 0.039 | kappa_b = +0.015 | 73/12 |
+
+The improvement of v5 came from the spin term; once it is cancelled, the J dependence of the data
+has to come from the spin-dependent wave-function corrections R(J) (not included).
+
+----
+
+## v6 (inherited): interpolated g_E1
 
 **EM_Pheno_v6_interp** = EM_Pheno_v5 + the quarkonium E1 fit with the interpolated LEF of
 Sec. "Interpolation of g_E1(r)" of the notes (label sec:pheno_E1_interpol):
@@ -11,7 +55,7 @@ three theory-error options of v5 (epsilon from chi2/ndf = 1, epsilon = v^2, epsi
 Baseline n = 2, variation n = 7, r0 = sqrt(pi/(6 sigma)) = 1.58 GeV^-1 (0.31 fm); checks:
 r0 = 1.0 GeV^-1 and n = 50 (step limit). EM_Pheno_v5 is kept unchanged.
 
-## Changes with respect to v5
+### Changes of v6 with respect to v5
 
 * `python/emlib/amplitudes.py`: one change. `Params.fE1` (optional array on the mesh) multiplies
   the E1 radial weight, g_E1 = kappa_Q e e_Q r fE1(r). Default None = LO dipole, so every v5

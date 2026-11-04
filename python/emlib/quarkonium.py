@@ -21,25 +21,35 @@ def build_state(lib, label):
 M_QUARK = {'c': 1.496, 'b': 4.88}
 
 
-def rel_delta(init, final, E):
-    """O(k/m) relativistic correction to the E1 dipole amplitude (EGTKLY, Eichten et al.
-    1980, Eq. (2.7); App. E of the notes), A -> A (1 + delta):
-        delta = k/(8 m_Q) * ( s [J_P (J_P + 1) - 4] - Delta_l / 3 ),
-    Delta_l = l_i (l_i + 1) - l_f (l_f + 1), k = photon energy.  The spin-orbit term
-    (s = -1 if the P-wave state is the initial one, +1 if it is the final one) is included
-    for spin-triplet S <-> P transitions only; it vanishes for spin singlets and is not
-    included (no closed form in EGTKLY) for transitions between two orbitally excited
-    states (D -> P). For P -> S the result coincides with the O(k/m) terms of
-    Brambilla, Pietrulewicz, Vairo (2012), Eqs. (80), (81), (85), once their factor
-    (1 - k/M) is included."""
+# v7: the spin-orbit (c_F^em) part of the O(k/m) correction is cancelled by the 1/m^2 c_S^em
+# spin-orbit operator (Brambilla, Pietrulewicz, Vairo 2012, Eqs. (86), (111), (119), (122)):
+# with the LO Schroedinger equation, (I2' + 2 I1)/(m^2 I3) = +-k_LO/(2m), so the two spin terms
+# sum to kappa_Q^em k/(2m)[J(J+1)/2 - 2], beyond our accuracy. Default: no spin term (SPIN = False);
+# SPIN = True (or spin=True) reproduces the EGTKLY delta of v5/v6.
+SPIN = False
+
+
+def rel_delta(init, final, E, spin=None):
+    """O(k/m) correction of the E1 amplitude, A -> A (1 + delta):
+        delta = k/(8 m_Q) * ( s [J_P (J_P + 1) - 4] * spin  -  Delta_l / 3 ),
+    Delta_l = l_i (l_i + 1) - l_f (l_f + 1), k = photon energy.
+    Spin-independent part (-Delta_l k/(24 m)): for P -> S (S -> P) it is the -k/6m (+k/6m) of
+    Eqs. (111)-(114) of Brambilla, Pietrulewicz, Vairo (2012) in the width, which combines their
+    Eqs. (80), (81) and the factor (1 - k/M) of their LO width (non-relativistic normalization here);
+    it is also the Delta_l term of EGTKLY (Eichten et al. 1980, App. E of the notes), used as well for
+    D -> P. Spin part (EGTKLY = BPV Eq. (85) with c_F^em = 1; s = -1 if the P wave is the initial
+    state, +1 if final; triplet S <-> P only): included only if spin=True (default: module SPIN,
+    False since v7, see above)."""
+    if spin is None:
+        spin = SPIN
     fl, ni, li, Si, Ji = STATES[init]
     _, nf, lf, Sf, Jf = STATES[final]
     dl = li * (li + 1) - lf * (lf + 1)
-    spin = 0.0
-    if Si == 1 and {li, lf} == {0, 1}:
+    sp = 0.0
+    if spin and Si == 1 and {li, lf} == {0, 1}:
         JP, sgn = (Ji, -1.0) if li == 1 else (Jf, +1.0)
-        spin = sgn * (JP * (JP + 1) - 4)
-    return E / (8.0 * M_QUARK[fl]) * (spin - dl / 3.0)
+        sp = sgn * (JP * (JP + 1) - 4)
+    return E / (8.0 * M_QUARK[fl]) * (sp - dl / 3.0)
 
 
 def predict_row(row, libs, nonloc=False, kappa=1.0, rel=False):

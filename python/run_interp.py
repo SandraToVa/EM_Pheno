@@ -2,7 +2,7 @@
 
     g_E1(r) = e r [e_Q + kappa_Q f(r)],   f(r) = (r/r0)^n / (1 + (r/r0)^n),
 
-plus the known O(k/m_Q) (1/m) corrections of EGTKLY (quarkonium.rel_delta), applied to the
+plus the O(k/m_Q) (1/m) corrections, Delta l term only since v7 (quarkonium.rel_delta), applied to the
 whole amplitude at all r. kappa_Q is fitted separately for charm and bottom, with the three
 theory-error options of v5: epsilon from chi2/ndf = 1, epsilon = v^2 (0.3 charm, 0.1 bottom),
 epsilon = 0. Shapes: n = 2 (baseline) and n = 7, r0 = sqrt(pi/(6 sigma)) = 1.58 GeV^-1;
@@ -91,10 +91,10 @@ from emlib.quarkonium import Fitter, predict_row
 F5 = Fitter(libs, [r for r in DATA if r['flavor'] == 'c' and r['set'] == 'core'], True, rel=False)
 k5, _, dl5, dh5 = F5.fit_kappa(F5.eps_for_unit_chi2())
 summary['v5_kappa_c_LO_NL_core'] = (k5, dl5, dh5)
-# v5 fit with the 1/m corrections (Table tab:kappa_rel): g_E1 = (1 + dkappa) e e_Q r, f = 1
+# fit with the 1/m corrections (Delta l only, v7; Table tab:kappa_rel): g_E1 = (1 + dkappa) e e_Q r, f = 1
 F5r = Fitter(libs, [r for r in DATA if r['flavor'] == 'c' and r['set'] == 'core'], True, rel=True)
 k5r, _, dl5r, dh5r = F5r.fit_kappa(F5r.eps_for_unit_chi2())
-summary['v5_kappa_c_rel_NL_core'] = (k5r, dl5r, dh5r)
+summary['kappa_c_rel_dl_NL_core'] = (k5r, dl5r, dh5r)
 _dat = {r['id']: r for r in DATA}
 lat_rows = []
 for n in (2, 7):
