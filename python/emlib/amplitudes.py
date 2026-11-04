@@ -245,7 +245,11 @@ def orbital_amplitudes(fc, ic, op, E, P, r, absval=False):
         pref = -1j * E * P.kappa_Q * P.eeQ
         x = E * np.outer(r, g.costh)
         FF = {'r': ff_E1(x) if P.nonloc else np.ones_like(x)}
-        w, chan, coup = {'r': r}, {'r': 'E1'}, {'r': 1.0}
+        # v6: optional radial profile of the E1 LEF, g_E1 = kappa_Q e e_Q r * fE1(r)
+        # (fE1 on the mesh; None = 1, the LO dipole). Used for the screening term of
+        # the interpolated g_E1(r) = e r [e_Q + kappa f(r)] (emlib/interp.py).
+        rw = r if getattr(P, 'fE1', None) is None else r * np.asarray(P.fE1)
+        w, chan, coup = {'r': rw}, {'r': 'E1'}, {'r': 1.0}
     else:
         pref = 2.0 * E / np.sqrt(np.pi * P.sigma) * P.eeQ
         w, FF = _radial_weights(E, P, r)

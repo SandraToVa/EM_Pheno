@@ -1,23 +1,45 @@
-# EM transitions — phenomenology code, v5 (O(k/m) corrections to E1)
+# EM transitions — phenomenology code, v6 (interpolated g_E1)
 
-**EM_Pheno_v5** = EM_Pheno_v4 + optional O(k/m_Q) corrections to the quarkonium E1 amplitudes,
-from Eichten et al. (EGTKLY, Phys. Rev. D 21, 203 (1980); App. E of the notes). The hybrid part,
-the amplitude engine and the tests are those of v4. v4 is kept unchanged in `../EM_Pheno_v4`.
-Note: in v7 the spin term of this correction is removed (it is cancelled by the 1/m² c_S^em term).
+**EM_Pheno_v6_interp** = EM_Pheno_v5 + the quarkonium E1 fit with the interpolated LEF of
+Sec. "Interpolation of g_E1(r)" of the notes (label sec:pheno_E1_interpol):
 
-## Changes with respect to v4
+    g_E1(r) = e r [e_Q + kappa_Q f(r)],   f(r) = (r/r0)^n / (1 + (r/r0)^n),
 
-* `python/emlib/quarkonium.py`: `M_QUARK` (m_c = 1.496, m_b = 4.88 GeV) and
-  `rel_delta(init, final, k)` = k/(8 m_Q) (s [J_P(J_P+1) − 4] − Δl/3), Δl = l_i(l_i+1) − l_f(l_f+1),
-  s = −1 for ³P_J → ³S₁, +1 for ³S₁ → ³P_J (spin term only for triplet S ↔ P; D → P: only Δl).
-  `predict_row(..., rel)` and `Fitter(..., rel)`: rel=True multiplies every width by (1 + δ)².
-* `python/run_all.py`: the E1 fits are done with rel=False and rel=True (column `rel` in
-  `quarkonium_fits.csv` and `quarkonium_pulls.csv`); the pulls file also stores the ε = 0
-  predictions and pulls (`pred_eps0`, `pull_eps0`). The hybrid normalization keeps the rel=False fits.
-* `python/make_tables.py`: new `tab_kappa_rel`, `tab_E1_rel`; `tab_E1_fit` gets the ε = 0 columns.
-* `python/figures.py`: the E1 ratio figure uses the rel=False rows.
-* Result (charm core, NL): χ²/ndf at ε = 0 161/6 → 72/6, ε 0.073 → 0.054, δκ_c −0.144 → −0.143;
-  bottomonium unchanged.
+with the known O(k/m_Q) ("1/m") corrections of EGTKLY applied to the whole amplitude at all r.
+kappa_Q (end-point charge in units of e) is fitted separately for charm and bottom, with the
+three theory-error options of v5 (epsilon from chi2/ndf = 1, epsilon = v^2, epsilon = 0).
+Baseline n = 2, variation n = 7, r0 = sqrt(pi/(6 sigma)) = 1.58 GeV^-1 (0.31 fm); checks:
+r0 = 1.0 GeV^-1 and n = 50 (step limit). EM_Pheno_v5 is kept unchanged.
+
+## Changes with respect to v5
+
+* `python/emlib/amplitudes.py`: one change. `Params.fE1` (optional array on the mesh) multiplies
+  the E1 radial weight, g_E1 = kappa_Q e e_Q r fE1(r). Default None = LO dipole, so every v5
+  result is unchanged (tests/test_engine.py: ALL PASS, see results/test_engine.log).
+* `python/emlib/interp.py`: `f_hill`, `predict_parts` (each width as the quadratic form
+  G00 + 2 lambda G0f + lambda^2 Gff, lambda = kappa_Q/e_Q, plus the |u_f u_i| version for the
+  theory error), `InterpFitter` (same chi^2 and theory error as `quarkonium.Fitter`; global
+  minimum on a grid, Delta chi2 = 1 errors). Check: with f = 1 it reproduces the v5 rel=True
+  fits exactly (kappa_Q = e_Q dkappa_Q).
+* `python/run_interp.py` -> `results/interp_fits.csv`, `interp_pulls.csv`, `interp_lattice.csv`,
+  `interp_f_of_r.csv`, `interp_summary.json` (log: `results/run_interp.log`).
+* `python/make_tables_interp.py` -> in `../TeX file/tex_pheno/`: `tab_kappa_interp.tex`,
+  `tab_E1_interp.tex`, `tab_lattice_chic0_v6.tex`, `tab_quarkonium_lattice_v6.tex`
+  (the v5 tables are not touched).
+
+Run, from `python/`: `python3 run_interp.py && python3 make_tables_interp.py` (about 15 s).
+
+## Main results (non-local, core, epsilon from chi2/ndf = 1)
+
+| | n = 2 | n = 7 |
+|---|---|---|
+| kappa_c | -0.114 +0.021 -0.020 (eps 0.060) | -0.098 +0.017 -0.016 (eps 0.058) |
+| kappa_b | +0.012 +- 0.016 (eps 0.040) | +0.011 +- 0.012 (eps 0.039) |
+| kappa_c - kappa_b | -0.126 +- 0.026 | -0.109 +- 0.021 |
+
+kappa_Q is not flavour universal: the charmonium value is dominated by flavour-dependent
+corrections, not by screening. Shape systematic about 0.02 (charm), <= 0.005 (bottom).
+The hybrid normalization still uses dkappa_Q of v5 (Table tab:kappa).
 
 ----
 
