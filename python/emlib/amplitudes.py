@@ -343,4 +343,4 @@ def theory_sigma(G, Gabs, eps):
     """Theory uncertainty of a width G whose amplitude carries an absolute
     error eps * A_abs (A_abs = same amplitude with |u_f u_i| in the radial
     integrand, G_abs its width): sigma^2 = 4 eps^2 G Gabs + 2 eps^4 Gabs^2."""
-    return np.sqrt(4.0 * eps ** 2 * G * Gabs + 2.0 * eps ** 4 * Gabs ** 2)
+    return np.sqrt(max(4.0 * eps ** 2 * G * Gabs + 2.0 * eps ** 4 * Gabs ** 2, 0.0))   # max: rounding of quadratic forms

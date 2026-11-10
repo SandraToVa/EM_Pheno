@@ -8,6 +8,9 @@ or $EMPHENO_TEX, or EM_Pheno_v7/tex). Table file -> label in sec_pheno.tex / app
    tab_kappa_1m2.tex, tab_E1_1m2.tex         tab:kappa_1m2, tab:E1_1m2    + 1/m^2 c_S^em (Delta l only)
  quarkonium E1, g_E1(r) = e r [e_Q + kappa_Q f(r)] + 1/m  (interp_fits.csv, interp_pulls.csv)
    tab_kappa_interp.tex, tab_E1_interp.tex   tab:kappa_interp, tab:E1_interp
+ quarkonium E1, g_E1(r) = e r [e_Q + (A_Q r + kappa_Q x)/(1 + x)] + 1/m (v8; interp_short_fits.csv, interp_short_pulls.csv)
+   tab_kappa_interp_short.tex, tab_E1_interp_short.tex   tab:kappa_interp_short, tab:E1_interp_short   (A_Q, kappa_Q) per flavour
+   tab_kappa_interp_flav.tex, tab_E1_interp_flav.tex     tab:kappa_interp_flav, tab:E1_interp_flav     A_c = -A_b/2, kappa_c = -kappa_b/2
  quarkonium versus lattice QCD  (quarkonium_lattice.csv, summary.json)
    tab_lattice_chic0.tex, tab_quarkonium_lattice.tex, tab_lattice_radii.tex
  hybrids (sections commented out in sec_pheno.tex)
@@ -111,7 +114,7 @@ for n in (2, 7):
     for _, r in ifits[(ifits['shape_kind'] == 'main') & (ifits['n'] == n)].iterrows():
         rows.append(f"${r['flavor']}$ & {r['set']} & {'non-local' if r['nonlocal'] else 'local'} & {n} & "
                     f"{int(r['N_meas'])}+{int(r['N_UL'])} & {r['eps_fit']:.3f} & {kerr(r['kappa'], r['k_lo'], r['k_hi'])} & "
-                    f"${r['kappa'] / r['eQ']:+.3f}$ & {kerr(r['kappa_eps_alt'], r['k_lo_alt'], r['k_hi_alt'])} & "
+                    f"{kerr(r['kappa_eps_alt'], r['k_lo_alt'], r['k_hi_alt'])} & ${r['kappa_eps_alt'] / r['eQ']:+.3f}$ & "
                     f"{r['chi2_eps_alt']:.1f}/{int(r['ndf'])} & {kerr(r['kappa_eps0'], r['k_lo_eps0'], r['k_hi_eps0'])} & "
                     f"{r['chi2_eps0']:.0f}/{int(r['ndf'])} \\\\")
     rows.append('\\hline')
@@ -240,6 +243,59 @@ for _, r in hd[hd['variant'] == 'NL'].iterrows():
                 + ' & '.join(fmt(r[k]) for k in ('coherent_Pi', 'coherent_Sigma', 'coherent_int', 'coherent')) + ' \\\\')
 with open(os.path.join(TEX, 'tab_hindered.tex'), 'w') as f:
     f.write('\n'.join(rows) + '\n\\hline\n')
+
+# --------------------------------------------------------- Tables (v8): short-distance + interpolated g_E1(r), and the
+# flavour-independent fit (A_c = -A_b/2, kappa_c = -kappa_b/2); from interp_short_fits.csv, interp_short_pulls.csv
+s2f = pd.read_csv(os.path.join(RES, 'interp_short_fits.csv'))
+s2p = pd.read_csv(os.path.join(RES, 'interp_short_pulls.csv'))
+
+
+def perr(v, lo, hi, d=3):
+    """value^{+hi}_{-lo} with d decimals (no -0.000)"""
+    v = 0.0 if abs(v) < 0.5 * 10 ** -d else v
+    return f"${v:+.{d}f}^{{+{hi:.{d}f}}}_{{-{lo:.{d}f}}}$"
+
+
+rows = []
+for n in (2, 7):
+    for _, r in s2f[(s2f['mode'] == 'free') & (s2f['n'] == n)].iterrows():
+        rows.append(f"${r['flavor']}$ & {r['set']} & {'non-local' if r['nonlocal'] else 'local'} & {n} & "
+                    f"{int(r['N_meas'])}+{int(r['N_UL'])} & {r['eps_fit']:.3f} & "
+                    f"{perr(r['A_fit'], r['A_lo_fit'], r['A_hi_fit'])} & {perr(r['kappa_fit'], r['k_lo_fit'], r['k_hi_fit'])} & "
+                    f"{perr(r['A_v3'], r['A_lo_v3'], r['A_hi_v3'])} & {perr(r['kappa_v3'], r['k_lo_v3'], r['k_hi_v3'])} & "
+                    f"${r['rho_v3']:+.2f}$ & {r['chi2_v3']:.1f}/{int(r['ndf'])} & "
+                    f"{perr(r['A_eps0'], r['A_lo_eps0'], r['A_hi_eps0'])} & {perr(r['kappa_eps0'], r['k_lo_eps0'], r['k_hi_eps0'])} & "
+                    f"{r['chi2_eps0']:.0f}/{int(r['ndf'])} \\\\")
+    rows.append('\\hline')
+with open(os.path.join(TEX, 'tab_kappa_interp_short.tex'), 'w') as f:
+    f.write('\n'.join(rows) + '\n')
+
+rows = []
+L = s2f[(s2f['mode'] == 'linked') & (s2f['ratio'] == -0.5)]
+for n in (2, 7):
+    for _, r in L[L['n'] == n].iterrows():
+        rows.append(f"{r['set']} & {'non-local' if r['nonlocal'] else 'local'} & {n} & "
+                    f"{int(r['N_meas'])}+{int(r['N_UL'])} & {r['eps_fit']:.3f} / {r['eps_fit_b']:.3f} & "
+                    f"{perr(r['A_fit'], r['A_lo_fit'], r['A_hi_fit'])} & {perr(r['kappa_fit'], r['k_lo_fit'], r['k_hi_fit'])} & "
+                    f"{perr(r['A_v3'], r['A_lo_v3'], r['A_hi_v3'])} & {perr(r['kappa_v3'], r['k_lo_v3'], r['k_hi_v3'])} & "
+                    f"${r['rho_v3']:+.2f}$ & {r['chi2_v3']:.1f}/{int(r['ndf'])} ({r['chi2_v3_c']:.1f} + {r['chi2_v3_b']:.1f}) & "
+                    f"{perr(r['A_eps0'], r['A_lo_eps0'], r['A_hi_eps0'])} & {perr(r['kappa_eps0'], r['k_lo_eps0'], r['k_hi_eps0'])} & "
+                    f"{r['chi2_eps0']:.0f}/{int(r['ndf'])} ({r['chi2_eps0_c']:.0f} + {r['chi2_eps0_b']:.0f}) \\\\")
+    rows.append('\\hline')
+with open(os.path.join(TEX, 'tab_kappa_interp_flav.tex'), 'w') as f:
+    f.write('\n'.join(rows) + '\n')
+
+for mode, fname in (('free', 'tab_E1_interp_short.tex'), ('linked', 'tab_E1_interp_flav.tex')):
+    q = s2p[s2p['mode'] == mode]
+    a2, a7 = q[q['n'] == 2].reset_index(drop=True), q[q['n'] == 7].reset_index(drop=True)
+    rows = []
+    for (_, a), (_, b) in zip(a2.iterrows(), a7.iterrows()):
+        assert a['id'] == b['id']
+        rows.append(f"{lab(a['id'])} & {a['set']} & {_dat(a)} & {_dl(a['delta'])} & {fmt(a['pred_lo_corr'])} & "
+                    f"{fmt(a['pred_eps0'])} & {a['pull_eps0']:+.2f} & {fmt(a['pred_fit'])} $\\pm$ {fmt(a['err_th'])} & {a['pull']:+.2f} & "
+                    f"{fmt(b['pred_fit'])} $\\pm$ {fmt(b['err_th'])} & {b['pull']:+.2f} \\\\")
+    with open(os.path.join(TEX, fname), 'w') as f:
+        f.write('\n'.join(rows) + '\n\\hline\n')
 
 # --------------------------------------------------------- Table: lattice comparison
 rows = []

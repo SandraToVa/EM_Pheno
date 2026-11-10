@@ -6,7 +6,9 @@ formulas of the notes and standard results.
         and general c1..c4 (R_Pi, R_Sigma of Eqs. (eq:lab_RPi), (eq:lab_RSigma))
   5-6   local limit of the non-local forms, spin-1 sum rule
   7     E1 corrections and interpolated g_E1: f = 1 reproduces (1 + dkappa)^2 x LO for
-        corr = LO, 1m, 1m2; spin term of rel_delta only for corr = 1m
+        corr = LO, 1m, 1m2; spin term of rel_delta only for corr = 1m; short-distance
+        interpolation (interp2): A_Q = 0 reproduces interp, A_Q term = width with weight r * r (1 - f),
+        linked charm/bottom parameters
   8     non-local widths vs the multipole formulas (E1, Pi channel)
   9     spin-1 hybrids (Pi channel), 6j recoupling
   10    selection rules of the two channels: l = J states have no Sigma channel,
@@ -158,6 +160,35 @@ for rid, JP, s_ in (('psi2S->chic0', 0, +1), ('psi2S->chic2', 2, +1), ('chic1->J
     d = rel_delta(row['init'], row['final'], Eg, '1m') - rel_delta(row['init'], row['final'], Eg, '1m2')
     check(f"spin term of rel_delta, {rid}", d, Eg / (8 * M_QUARK['c']) * s_ * (JP * (JP + 1) - 4), 1e-12)
     check(f"no correction at LO, {rid}", 1.0 + rel_delta(row['init'], row['final'], Eg, 'LO'), 1.0, 1e-15)
+
+# 7b. (v8) g_E1 = e r [e_Q + (A_Q r + kappa_Q x)/(1 + x)] (interp2): the 3x3 form at A_Q = 0 equals the
+#     2-parameter form of interp.py; the pure A_Q term equals a width computed directly with the weight
+#     r * alpha r (1 - f(r)); in the linked fit the charm parameters are -1/2 x the bottom ones
+from emlib.interp2 import predict_forms, qform, Interp2Fitter
+from emlib.interp import f_hill
+from emlib.quarkonium import build_state
+for rid in ('psi2S->chic1', 'chib1(2P): Y1S/Y2S', 'Y3S->chib0(1P)'):
+    row = [x for x in DATA if x['id'] == rid][0]
+    fl = row['flavor']
+    for nl in (False, True):
+        lam = -0.2
+        g3 = qform(predict_forms(row, libs, nl, '1m', 2)[0]['G'], 0.0, lam)
+        g2 = quad(predict_parts(row, libs, nl, '1m', 2)[0]['g'], lam)
+        check(f"interp2 A=0 == interp, {rid}, nonlocal={nl}", g3, g2, 1e-10)
+row = [x for x in DATA if x['id'] == 'chic1->Jpsi'][0]
+lb = libs['c']; fi = build_state(lb, row['init']); ff = build_state(lb, row['final'])
+Eg = photon_energy(MASS[row['init']], MASS[row['final']])
+for nl in (False, True):
+    alpha = 0.07
+    Pd = Params('c', nonloc=nl); Pd.fE1 = alpha * lb.r * (1.0 - f_hill(lb.r, 2))   # pure A_Q term
+    gd = width(ff, fi, Eg, Pd, lb.r) * 1e6 * (1 + rel_delta(row['init'], row['final'], Eg, '1m')) ** 2
+    G = predict_forms(row, libs, nl, '1m', 2)[0]['G']
+    check(f"interp2 pure A_Q term == direct width, nonlocal={nl}", alpha ** 2 * G[1, 1], gd, 1e-10)
+Fl = Interp2Fitter(libs, [x for x in DATA if x['set'] == 'core'], True, '1m', 2, mode='linked')
+Ac, kc_ = Fl.params_of((0.03, -0.1), 'c')
+check("linked fit: A_c = -A_b/2", Ac, -0.015, 1e-12)
+check("linked fit: kappa_c = -kappa_b/2", kc_, 0.05, 1e-12)
+check("linked fit: A_Q e_Q flavour independent", Ac * CHARGE['c'], 0.03 * CHARGE['b'], 1e-12)
 
 # 8. non-local widths vs the closed multipole formulas of the notes (hybrids: Pi channel)
 #    (quarkonium: Gamma = c1^2 E^3/pi sum_K C(lKl',00)^2/(2K+1) J_K^2;

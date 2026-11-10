@@ -1,4 +1,4 @@
-"""Runs the full EM-transition phenomenology (EM_Pheno v7) and writes results/ (CSV, JSON).
+"""Runs the full EM-transition phenomenology (EM_Pheno v8) and writes results/ (CSV, JSON).
 
     python3 run_all.py            all sections (from the python/ folder)
     python3 run_all.py --e1       quarkonium E1 only (sections 1-3)
@@ -16,6 +16,12 @@ Sections
   2. interpolated LEF g_E1(r) = e r [e_Q + kappa_Q f(r)], f = Hill function (emlib.interp), with
      the '1m' corrections; n = 2, 7 at r0 = 1.58 GeV^-1, checks r0 = 1.0, n = 50
      -> interp_fits.csv, interp_pulls.csv, interp_f_of_r.csv (Tables tab:kappa_interp, tab:E1_interp)
+  2b. (v8) short-distance term: g_E1 = e r [e_Q + (A_Q r + kappa_Q x)/(1 + x)], x = (r/r0)^n,
+     (A_Q, kappa_Q) per flavour, with the '1m' corrections, n = 2, 7 (emlib.interp2)
+  2c. (v8) flavour-independent fit of charm and bottom together, A_c = -A_b/2, kappa_c = -kappa_b/2
+     (A_Q = A/e_Q, kappa_Q = kappa/e_Q; and A_c = A_b, kappa_c = kappa_b as a check)
+     -> interp_short_fits.csv, interp_short_pulls.csv (Tables tab:kappa_interp_short, tab:E1_interp_short,
+        tab:kappa_interp_flav, tab:E1_interp_flav)
   3. quarkonium E1 widths from lattice QCD versus all the fits above
      -> quarkonium_lattice.csv (Tables tab:lattice, tab:quarkonium_lattice)
   4. hybrids (normalized with the LO dkappa_Q: c_i = dkappa_Q e e_Q), BESIII constraints,
@@ -175,6 +181,93 @@ write_csv('interp_f_of_r.csv', [{'r_GeVinv': float(x), 'r_fm': float(x * HBARC),
 for f in ifits:
     if f['nonlocal']:
         summary['interp'][f"kappa_{f['flavor']}_{f['set']}_n{f['n']}_r0{f['r0']:.2f}"] = (f['kappa_eps_alt'], f['k_lo_alt'], f['k_hi_alt'], f['eps_alt'])
+
+# =========================================================== 2b. short-distance + interpolated g_E1(r) (v8):
+# g_E1 = e r [e_Q + (A_Q r + kappa_Q x)/(1 + x)], x = (r/r0)^n, two parameters per flavour, corrections CORR_INTERP
+# =========================================================== 2c. flavour-independent fit: charm and bottom together,
+# A_c = RATIO_LINK A_b, kappa_c = RATIO_LINK kappa_b (RATIO_LINK = e_b/e_c = -1/2: A_Q = A/e_Q, kappa_Q = kappa/e_Q
+# with flavour-independent A, kappa; +1, equal A_Q and kappa_Q, as a check)
+from emlib.interp2 import Interp2Fitter, V3
+RATIO_LINK = -0.5
+SHAPES2 = (2, 7)
+
+
+def fit2_row(F, eps_fit, extra):
+    """fits of an Interp2Fitter at eps_fit (chi2/ndf = 1), eps = v^3 and eps = 0; reference-flavour parameters"""
+    out = dict(extra)
+    ev3 = V3[F.ref] if F.mode == 'free' else dict(V3)
+    for tag, eps in (('fit', eps_fit), ('v3', ev3), ('eps0', 0.0)):
+        p, c = F.fit(eps)
+        ((dAl, dAh), (dkl, dkh)), rho = F.profile_errors(p, c, eps)
+        out.update({f'A_{tag}': p[0], f'A_lo_{tag}': dAl, f'A_hi_{tag}': dAh, f'kappa_{tag}': p[1],
+                    f'k_lo_{tag}': dkl, f'k_hi_{tag}': dkh, f'chi2_{tag}': c})
+        if tag == 'v3':
+            out['rho_v3'] = rho
+        if F.mode == 'linked':
+            for fl in ('c', 'b'):            # chi2 of each flavour at the common parameters
+                sub = SUB[(F.nonloc, F.n, out['set'], fl)]
+                out[f'chi2_{tag}_{fl}'] = sub.chi2(F.params_of(p, fl), eps[fl] if isinstance(eps, dict) else eps)
+        out[f'p_{tag}'] = p
+    out['ndf'] = F.ndf()
+    return out
+
+
+print('== 2b. g_E1 = e r [e_Q + (A_Q r + kappa_Q x)/(1 + x)]: two-parameter fits per flavour')
+s2_fits, s2_pulls, SUB = [], [], {}
+for n in SHAPES2:
+    for nonloc in (False, True):
+        for fl, sets, tag in SETS:
+            rows = [r for r in DATA if r['flavor'] == fl and r['set'] in sets]
+            F = Interp2Fitter(libs, rows, nonloc, CORR_INTERP, n=n, r0=R0_EST)
+            SUB[(nonloc, n, tag, fl)] = F
+            if fl == 'b':
+                SUB[(nonloc, n, 'core+ext', 'b')] = F
+            ef = F.eps_for_unit_chi2()
+            o = fit2_row(F, ef, {'mode': 'free', 'n': n, 'r0': R0_EST, 'flavor': fl, 'eQ': CHARGE[fl], 'set': tag,
+                                 'nonlocal': nonloc, 'N_meas': len(F.meas), 'N_UL': len(F.uls), 'eps_fit': ef,
+                                 'eps_v3': V3[fl]})
+            print(f"  n={n} {'NL' if nonloc else 'L '} {fl} {tag:9s} eps={ef:.3f} | v3: A={o['A_v3']:+.4f} kappa={o['kappa_v3']:+.4f} "
+                  f"rho={o['rho_v3']:+.3f} chi2 {o['chi2_v3']:.1f}/{o['ndf']} | eps=0: A={o['A_eps0']:+.4f} kappa={o['kappa_eps0']:+.4f} "
+                  f"chi2 {o['chi2_eps0']:.1f}/{o['ndf']}")
+            if nonloc and (tag == 'core+ext' or fl == 'b'):
+                pr = pull_table(F, rows, o['p_v3'], V3[fl], o['p_eps0'], {'mode': 'free', 'n': n, 'flavor': fl, 'eps': V3[fl]})
+                mod_lo = F.model((0.0, 0.0), 0.0)
+                for kk, q in enumerate(pr):
+                    q['delta'] = ' / '.join(f"{x['delta']:+.4f}" for x in F.forms[kk])
+                    q['pred_lo_corr'] = mod_lo[kk][0]
+                s2_pulls += pr
+            s2_fits.append({k: v for k, v in o.items() if not k.startswith('p_')})
+
+print(f'== 2c. flavour-independent fit: A_c = {RATIO_LINK} A_b, kappa_c = {RATIO_LINK} kappa_b')
+for ratio in (RATIO_LINK, 1.0):
+    for n in SHAPES2:
+        for nonloc in (False, True):
+            for tag, sets_c in (('core', ('core',)), ('core+ext', ('core', 'ext'))):
+                if ratio != RATIO_LINK and not (nonloc and tag == 'core'):
+                    continue                  # ratio = +1 (equal end-point charges): one check per shape
+                rows = [r for r in DATA if (r['flavor'] == 'c' and r['set'] in sets_c) or (r['flavor'] == 'b' and r['set'] == 'core')]
+                F = Interp2Fitter(libs, rows, nonloc, CORR_INTERP, n=n, r0=R0_EST, mode='linked', ratio=ratio)
+                ef = F.eps_for_unit_chi2()
+                o = fit2_row(F, ef, {'mode': 'linked', 'ratio': ratio, 'n': n, 'r0': R0_EST, 'flavor': 'c+b', 'set': tag,
+                                     'nonlocal': nonloc, 'N_meas': len(F.meas), 'N_UL': len(F.uls),
+                                     'eps_fit': ef['c'], 'eps_fit_b': ef['b'], 'eps_v3': V3['c'], 'eps_v3_b': V3['b'],
+                                     'params_of': 'b'})
+                print(f"  ratio={ratio:+.1f} n={n} {'NL' if nonloc else 'L '} {tag:9s} eps={ef['c']:.3f}/{ef['b']:.3f} | v3: A_b={o['A_v3']:+.4f} "
+                      f"kappa_b={o['kappa_v3']:+.4f} chi2 {o['chi2_v3']:.1f}/{o['ndf']} (c {o['chi2_v3_c']:.1f}, b {o['chi2_v3_b']:.1f}) | eps=0: "
+                      f"A_b={o['A_eps0']:+.4f} kappa_b={o['kappa_eps0']:+.4f} chi2 {o['chi2_eps0']:.1f}/{o['ndf']} "
+                      f"(c {o['chi2_eps0_c']:.1f}, b {o['chi2_eps0_b']:.1f})")
+                if ratio == RATIO_LINK and nonloc and tag == 'core+ext':
+                    pr = pull_table(F, rows, o['p_v3'], dict(V3), o['p_eps0'], {'mode': 'linked', 'n': n, 'flavor': '', 'eps': 'v3'})
+                    mod_lo = F.model((0.0, 0.0), 0.0)
+                    for kk, q in enumerate(pr):
+                        q['flavor'] = rows[kk]['flavor']
+                        q['delta'] = ' / '.join(f"{x['delta']:+.4f}" for x in F.forms[kk])
+                        q['pred_lo_corr'] = mod_lo[kk][0]
+                    s2_pulls += pr
+                s2_fits.append({k: v for k, v in o.items() if not k.startswith('p_')})
+keys = list(dict.fromkeys(k for f in s2_fits for k in f))
+write_csv('interp_short_fits.csv', [{k: f.get(k, np.nan) for k in keys} for f in s2_fits])
+write_csv('interp_short_pulls.csv', s2_pulls)
 
 # =========================================================== 3. quarkonium: lattice QCD versus the fits (NL, charm core,
 # epsilon = v^2 for LO, v^3 for 1m, 1m2 and the interpolated fits). (id, init, final, lattice width keV, error, source)

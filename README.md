@@ -1,4 +1,79 @@
-# EM transitions — phenomenology code, v7
+# EM transitions — phenomenology code, v8 (short-distance term in the interpolated g_E1)
+
+**EM_Pheno_v8** = EM_Pheno_v7 + the two fits of the paragraphs "Short distances interpolation" and
+"Flavor independent fit" of Sec. "Interpolation of g_E1(r)" (sec_pheno.tex, eq:gE1_interp_short):
+
+    g_E1(r) = e r [ e_Q + (A_Q r + kappa_Q x) / (1 + x) ],   x = (r/r0)^n,   r0 = 1.58 GeV^-1,
+            = e e_Q r [ 1 + alpha_Q r (1 - f) + lambda_Q f ],  f = x/(1+x), alpha_Q = A_Q/e_Q, lambda_Q = kappa_Q/e_Q,
+
+i.e. a correction A_Q r at short distances (r << r0) and the end-point charge kappa_Q at long distances
+(r >> r0). 1/m corrections corr = '1m' (spin + Delta l), as for the one-parameter interpolation.
+A_Q in GeV, kappa_Q in units of e. EM_Pheno_v7 is kept unchanged.
+
+* **Free fit** (`mode='free'`): (A_Q, kappa_Q) fitted for each flavour, n = 2 and 7, L and NL.
+* **Flavour-independent fit** (`mode='linked'`): charm and bottom data together, two parameters
+  (A_b, kappa_b), with A_c = -A_b/2 and kappa_c = -kappa_b/2 (`ratio = e_b/e_c = -1/2`): A_Q = A/e_Q and
+  kappa_Q = kappa/e_Q with flavour-independent A, kappa (the constants depend on the heavy quark only
+  through its charge). The run also does ratio = +1 (A_c = A_b, kappa_c = kappa_b; NL, core) as a check
+  (CSV only).
+* Physical region (as the scan range of the one-parameter fit): -0.8 <= kappa_Q/e_Q <= 1 and
+  |A_Q/e_Q| <= 2 GeV for every flavour. Outside it the correction exceeds the LO amplitude and can flip its
+  sign; since the widths depend on the amplitude squared this gives mirror minima of equal chi2.
+  The fit starts Nelder-Mead from the lowest local minima of a grid on this region and keeps the best.
+* Theory error as everywhere: results with epsilon = v^3 (0.164 charm, 0.032 bottom) and epsilon = 0;
+  the epsilon of chi2/ndf = 1 only in the fit tables (in the linked fit eps_Q = s v_Q^3, common s).
+  ndf = N_meas - 2. Errors: Delta chi2 = 1, profiled over the other parameter; rho = correlation.
+
+## How to run (from python/)
+
+```bash
+python3 run_all.py            # everything (about 7 min); --e1: quarkonium E1 only (about 5 min)
+python3 r_moments.py && python3 make_tables.py && python3 figures.py
+python3 ../tests/test_engine.py   # 280 checks, must end with ALL PASS
+```
+
+## Changes with respect to v7
+
+* `python/emlib/interp2.py` (new): `predict_forms` (each width as (1+delta)^2 v^T G v, v = (1, A_Q/e_Q,
+  kappa_Q/e_Q), G 3x3 from the amplitudes with radial profiles 1, r (1 - f), f; also the |u_f u_i| version
+  for the theory error), `qform`, `Interp2Fitter` (modes 'free' and 'linked'; `fit`, `profile_errors`,
+  `eps_for_unit_chi2`, `inside`).
+* `python/run_all.py`: new sections 2b (free fits) and 2c (flavour-independent fits) ->
+  `results/interp_short_fits.csv` (column `mode` = free / linked, `ratio`; for linked fits A, kappa are
+  the bottom values), `interp_short_pulls.csv`. All v7 results are identical.
+* `python/make_tables.py`: four new tables, `tab_kappa_interp_short`, `tab_E1_interp_short`
+  (tab:kappa_interp_short, tab:E1_interp_short), `tab_kappa_interp_flav`, `tab_E1_interp_flav`
+  (tab:kappa_interp_flav, tab:E1_interp_flav); `tab_kappa_interp` has kappa_Q/e_Q next to the
+  epsilon = v^3 fit.
+* `python/emlib/amplitudes.py`: `theory_sigma` clips the (rounding-level) negative values that a quadratic
+  form can give (no effect on any v7 number).
+* `tests/test_engine.py`: test 7 extended (A_Q = 0 reproduces interp.py; the A_Q term alone equals the
+  width computed directly with the weight alpha r^2 (1 - f); linked parameters). 280 checks, ALL PASS.
+* 10 Nov (second version): the short-distance term is A_Q r/(1 + x) (it was A_Q r at all distances in the
+  first version); the link is A_c = -A_b/2, kappa_c = -kappa_b/2 (A_Q = A/e_Q, kappa_Q = kappa/e_Q).
+
+## Main results (NL, core; epsilon = v^3 and epsilon = 0)
+
+| fit | n | A (GeV) | kappa | rho | chi2/ndf (v^3) | chi2/ndf (eps = 0) |
+|---|---|---|---|---|---|---|
+| charm, free | 2 | -0.16 +- 0.31 | -0.003 +0.24 -0.22 | -0.97 | 0.7/5 | 72/5 (one-parameter interp: 76/6) |
+| charm, free | 7 | -0.16 +- 0.35 | -0.088 +0.057 -0.046 | -0.57 | 0.7/5 | 72/5 (74/6) |
+| bottom, free | 2 | -0.056 +0.026 -0.028 | +0.044 +0.019 -0.018 | -0.69 | 11.2/11 | 65/11 (77/12) |
+| bottom, free | 7 | -0.036 +0.018 -0.019 | +0.001 +- 0.012 | +0.49 | 12.2/11 | 86/11 (99/12) |
+| c + b, A_c = -A_b/2, kappa_c = -kappa_b/2 | 2 | A_b = -0.054 +0.025 -0.028 | kappa_b = +0.045 +0.019 -0.018 | -0.69 | 15.8/18 | 237/18 (charm 107, bottom 131) |
+| c + b, same | 7 | A_b = -0.034 | kappa_b = +0.003 | | 17.0/18 | 234/18 |
+| c + b, A_c = A_b, kappa_c = kappa_b (check) | 2 | -0.061 | +0.042 | | 15.9/18 | 270/18 |
+
+Compared with the one-parameter interpolation (same 1/m corrections) the extra parameter gives little:
+charm chi2(eps = 0) 76/6 -> 72/5 (n = 2), with A_c and kappa_c strongly correlated (rho = -0.97) and not
+determined separately; bottom 77/12 -> 65/11 and, at eps = v^3, 16.3/12 -> 11.2/11 (allowed
+Upsilon(2S,3S) -> chi_bJ(1P,2P) and hindered transitions). The flavour-independent fit is driven by
+bottom: at eps = v^3 it is acceptable (15.8/18) because the charm theory error is large, but at eps = 0
+it costs chi2 237 - (72 + 65) = 100 for two constraints (n = 2).
+
+----
+
+## v7 (5–6 Nov 2026): gap option removed, corr = LO/1m/1m2, eps = v^2/v^3, merged scripts
 
 **EM_Pheno_v7**: quarkonium E1 fits at LO, with the 1/m corrections, with the 1/m^2 term and with
 the interpolated g_E1(r); hybrid predictions with the string gaps of the matching (pi/r, 3pi/r)
@@ -16,7 +91,7 @@ python3 run_all.py            # everything (about 2 min); python3 run_all.py --e
 python3 r_moments.py          # sizes and counting parameters
 python3 make_tables.py        # all tab_*.tex, written to ../TeX file/tex_pheno (or $EMPHENO_TEX)
 python3 figures.py            # figures/*.pdf|png
-python3 ../tests/test_engine.py   # 269 checks, must end with ALL PASS
+python3 ../tests/test_engine.py   # must end with ALL PASS
 ```
 
 ## What each script does

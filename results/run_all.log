@@ -39,6 +39,30 @@
   n=50 r0=1.58 NL c core      eps=0.057 kappa=-0.0964 -0.0159+0.0169 (kappa/e_Q=-0.145) | eps=0.164: -0.0990 chi2 0.9/6 | eps=0: -0.1123 chi2 73.7/6
   n=50 r0=1.58 NL c core+ext  eps=0.072 kappa=-0.1137 -0.0161+0.0172 (kappa/e_Q=-0.171) | eps=0.164: -0.1155 chi2 2.2/9 | eps=0: -0.1239 chi2 88.9/9
   n=50 r0=1.58 NL b core      eps=0.039 kappa=+0.0098 -0.0108+0.0108 (kappa/e_Q=-0.029) | eps=0.032: +0.0100 chi2 16.3/12 | eps=0: +0.0310 chi2 107.9/12
+== 2b. g_E1 = e r [e_Q + (A_Q r + kappa_Q x)/(1 + x)]: two-parameter fits per flavour
+  n=2 L  c core      eps=0.058 | v3: A=-0.1815 kappa=+0.0036 rho=-0.975 chi2 0.8/5 | eps=0: A=-0.1132 kappa=-0.0644 chi2 77.2/5
+  n=2 L  c core+ext  eps=0.077 | v3: A=-0.1410 kappa=-0.0460 rho=-0.977 chi2 2.2/8 | eps=0: A=-0.1098 kappa=-0.0808 chi2 93.6/8
+  n=2 L  b core      eps=0.032 | v3: A=-0.0726 kappa=+0.0576 rho=-0.702 chi2 11.2/11 | eps=0: A=-0.0510 kappa=+0.0633 chi2 64.3/11
+  n=2 NL c core      eps=0.057 | v3: A=-0.1617 kappa=-0.0034 rho=-0.975 chi2 0.7/5 | eps=0: A=-0.1047 kappa=-0.0627 chi2 71.9/5
+  n=2 NL c core+ext  eps=0.075 | v3: A=-0.1228 kappa=-0.0519 rho=-0.977 chi2 2.1/8 | eps=0: A=-0.1023 kappa=-0.0781 chi2 87.4/8
+  n=2 NL b core      eps=0.032 | v3: A=-0.0565 kappa=+0.0442 rho=-0.692 chi2 11.2/11 | eps=0: A=-0.0368 kappa=+0.0517 chi2 65.3/11
+  n=7 L  c core      eps=0.059 | v3: A=-0.1862 kappa=-0.0928 rho=-0.576 chi2 0.8/5 | eps=0: A=-0.1070 kappa=-0.1149 chi2 77.2/5
+  n=7 L  c core+ext  eps=0.077 | v3: A=-0.1407 kappa=-0.1135 rho=-0.558 chi2 2.2/8 | eps=0: A=-0.1044 kappa=-0.1270 chi2 93.5/8
+  n=7 L  b core      eps=0.035 | v3: A=-0.0474 kappa=+0.0016 rho=+0.493 chi2 12.6/11 | eps=0: A=+0.0607 kappa=+0.0497 chi2 87.6/11
+  n=7 NL c core      eps=0.057 | v3: A=-0.1643 kappa=-0.0884 rho=-0.573 chi2 0.7/5 | eps=0: A=-0.0971 kappa=-0.1090 chi2 71.9/5
+  n=7 NL c core+ext  eps=0.075 | v3: A=-0.1198 kappa=-0.1091 rho=-0.555 chi2 2.1/8 | eps=0: A=-0.0952 kappa=-0.1209 chi2 87.4/8
+  n=7 NL b core      eps=0.034 | v3: A=-0.0363 kappa=+0.0007 rho=+0.492 chi2 12.2/11 | eps=0: A=-0.0438 kappa=+0.0081 chi2 85.8/11
+== 2c. flavour-independent fit: A_c = -0.5 A_b, kappa_c = -0.5 kappa_b
+  ratio=-0.5 n=2 L  core      eps=0.152/0.029 | v3: A_b=-0.0701 kappa_b=+0.0587 chi2 16.3/18 (c 5.1, b 11.3) | eps=0: A_b=+0.1453 kappa_b=+0.0815 chi2 254.2/18 (c 116.7, b 137.5)
+  ratio=-0.5 n=2 L  core+ext  eps=0.162/0.031 | v3: A_b=-0.0693 kappa_b=+0.0594 chi2 20.6/21 (c 9.3, b 11.3) | eps=0: A_b=+0.1610 kappa_b=+0.0931 chi2 302.3/21 (c 145.0, b 157.3)
+  ratio=-0.5 n=2 NL core      eps=0.148/0.028 | v3: A_b=-0.0541 kappa_b=+0.0453 chi2 15.8/18 (c 4.6, b 11.3) | eps=0: A_b=+0.1492 kappa_b=+0.0688 chi2 237.2/18 (c 106.6, b 130.6)
+  ratio=-0.5 n=2 NL core+ext  eps=0.158/0.030 | v3: A_b=-0.0534 kappa_b=+0.0460 chi2 19.9/21 (c 8.6, b 11.3) | eps=0: A_b=+0.1640 kappa_b=+0.0819 chi2 281.3/21 (c 131.8, b 149.4)
+  ratio=-0.5 n=7 L  core      eps=0.163/0.031 | v3: A_b=-0.0451 kappa_b=+0.0040 chi2 17.8/18 (c 5.2, b 12.6) | eps=0: A_b=+0.1105 kappa_b=+0.1482 chi2 252.0/18 (c 116.7, b 135.3)
+  ratio=-0.5 n=7 L  core+ext  eps=0.170/0.033 | v3: A_b=-0.0442 kappa_b=+0.0050 chi2 22.2/21 (c 9.6, b 12.6) | eps=0: A_b=+0.1233 kappa_b=+0.1663 chi2 299.9/21 (c 144.9, b 154.9)
+  ratio=-0.5 n=7 NL core      eps=0.158/0.030 | v3: A_b=-0.0342 kappa_b=+0.0030 chi2 17.0/18 (c 4.7, b 12.3) | eps=0: A_b=+0.1156 kappa_b=+0.1438 chi2 234.2/18 (c 102.9, b 131.3)
+  ratio=-0.5 n=7 NL core+ext  eps=0.165/0.032 | v3: A_b=-0.0334 kappa_b=+0.0040 chi2 21.1/21 (c 8.8, b 12.3) | eps=0: A_b=+0.1273 kappa_b=+0.1619 chi2 276.3/21 (c 128.0, b 148.3)
+  ratio=+1.0 n=2 NL core      eps=0.148/0.029 | v3: A_b=-0.0610 kappa_b=+0.0417 chi2 15.9/18 (c 4.5, b 11.4) | eps=0: A_b=-0.1073 kappa_b=-0.0032 chi2 270.1/18 (c 121.4, b 148.7)
+  ratio=+1.0 n=7 NL core      eps=0.155/0.030 | v3: A_b=-0.0404 kappa_b=-0.0038 chi2 16.6/18 (c 4.2, b 12.4) | eps=0: A_b=-0.0932 kappa_b=-0.0629 chi2 268.6/18 (c 115.6, b 153.0)
 == 3. quarkonium E1 widths from lattice QCD
   chic0->Jpsi        lat  208.6 | LO NL  200.1  fit LO  144.9  fit 1m  171.4  fit 1m2  143.5  interp n2  178.2 n7  176.4 | dkappa_eff +0.021  kappa_eff(n=2) -0.053
   chic1->Jpsi        lat  327.0 | LO NL  417.3  fit LO  302.3  fit 1m  330.9  fit 1m2  296.5  interp n2  344.1 n7  340.6 | dkappa_eff -0.115  kappa_eff(n=2) -0.137
