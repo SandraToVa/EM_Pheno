@@ -108,7 +108,7 @@ THESIS_V_ETAC = {"psi(2S)": (0.485, 0.060), "psi(3770)": (0.33, 0.11), 'J/psi': 
 LAT_SYST = 0.30
 
 
-def hybrid_lattice_table(flavor_lib, gaps, hyb, variants, kappa):
+def hybrid_lattice_table(flavor_lib, hyb, variants, kappa):
     """Our LO widths (keV) at the kinematics of each lattice determination (at kappa_H = 1
     and at kappa_H = kappa; v4: kappa = dkappa_c), and
     the kappa_H that reproduces it; plus the S=1 partners at the J&S kinematics."""
@@ -120,7 +120,7 @@ def hybrid_lattice_table(flavor_lib, gaps, hyb, variants, kappa):
         h = tuple(hyb[:6]) + (Mi,) + tuple(hyb[7:])
         Jf = None if S == 0 else 1
         for v in variants:
-            sp, E = HY.gamma_split('c', flavor_lib, gaps, h, fin, v, (1.0,) * 4, S=S, Jcal=Jcal, Jf=Jf)
+            sp, E = HY.gamma_split('c', flavor_lib, h, fin, v, (1.0,) * 4, S=S, Jcal=Jcal, Jf=Jf)
             g1 = sp['total']
             rows.append({'channel': ch, 'dataset': ds, 'M_i': Mi, 'M_f': fin[3], 'E_q': E,
                          'variant': v, 'Gamma_k1_keV': g1, 'Gamma_k1_Pi_keV': sp['Pi'],
@@ -131,7 +131,7 @@ def hybrid_lattice_table(flavor_lib, gaps, hyb, variants, kappa):
     return rows
 
 
-def gamma_vs_Eq(lib, gaps, hyb, variants, Es):
+def gamma_vs_Eq(lib, hyb, variants, Es):
     """Gamma(1(s/d)_1 -> eta_c(1S) gamma)(E_q) at kappa_H = 1 (keV). At our order this is
     also Gamma(S=1 (s/d)_1, any Jcal -> J/psi gamma) at the same E_q."""
     from . import hybrids as HY
@@ -140,7 +140,7 @@ def gamma_vs_Eq(lib, gaps, hyb, variants, Es):
     f = lib.quarkonium(1, 0)
     out = []
     for v in variants:
-        P = HY.params('c', v, (1.0,) * 4, gaps)
+        P = HY.params('c', v, (1.0,) * 4)
         for E in Es:
             sp = width_split(f, st, E, P, lib.r)
             out.append({'variant': v, 'E_q': float(E), 'Gamma_k1_keV': sp['total'] * 1e6,
@@ -148,7 +148,7 @@ def gamma_vs_Eq(lib, gaps, hyb, variants, Es):
     return out
 
 
-def channel_solutions(rows, variants=('NL', 'L', 'pot-NL', 'pot-L')):
+def channel_solutions(rows, variants=('NL', 'L')):
     """Channel strengths (kappa_Pi, kappa_Sigma) that reproduce two lattice widths of the
     same data set at once, Gamma = kappa_Pi^2 G_PiPi + kappa_Sigma^2 G_SigmaSigma +
     kappa_Pi kappa_Sigma G_int (G at kappa = 1). All solutions with kappa_Pi > 0."""

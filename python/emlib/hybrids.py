@@ -3,11 +3,8 @@
 The hybrid vertex has two channels on the same footing (amplitudes.py):
   Pi_u    transverse operators g_B_perp (c2), g_E_par (c3), g_E_perp (c1), gap Delta_Pi;
   Sigma_u^- longitudinal operators g_B_par (c4), g_E^Sigma (c3),          gap Delta_Sigma.
-Variants (VARIANTS):
-  'NL', 'L'          matched gaps Delta_Pi = pi/r, Delta_Sigma = 3 pi/r (EST, as matched; the
-                     results of Sec. sec:pheno), non-local (string) or local (multipole) form;
-  'pot-NL', 'pot-L'  gaps from the BOEFT potentials, Delta_Pi = V_Pi_u - V_Sigma_g,
-                     Delta_Sigma = V_Sigma_u - V_Sigma_g (App. app:potential_gaps).
+String gaps Delta_Pi = pi/r, Delta_Sigma = 3 pi/r (EST, as matched).
+Variants (VARIANTS): 'NL' non-local (string) densities, 'L' local (multipole-expanded) LEFs.
 Couplings: c_i = kappa_i e e_Q, with c1 = c2 = c3 = c4 (one string coupling)
 unless stated otherwise. Every width is returned with its exact split
 Gamma = Gamma_PiPi + Gamma_SigmaSigma + Gamma_int (width_split), so the
@@ -15,9 +12,7 @@ channel strengths kappa_Pi, kappa_Sigma enter as
     Gamma(kappa_Pi, kappa_Sigma) = kappa_Pi^2 G_Pi + kappa_Sigma^2 G_Sigma + kappa_Pi kappa_Sigma G_int.
 """
 import numpy as np
-from scipy.io import loadmat
-import os
-from .states import Library, DATA_DIR
+from .states import Library
 from .amplitudes import Params, width, width_split, photon_energy
 from .states import pi_sigma_projections
 
@@ -59,21 +54,7 @@ FINALS = {
           ('h_b3(1F)', 1, 3, 10.35, 'est')],
 }
 
-VARIANTS = {'NL': ('matched', True), 'L': ('matched', False),
-            'pot-NL': ('potential', True), 'pot-L': ('potential', False)}
-
-
-def load_dV(flavor):
-    return loadmat(os.path.join(DATA_DIR, f'wf_{flavor}_nomix.mat'))['dV'].ravel()
-
-
-def load_dVS(flavor):
-    """V_Sigma_u^- - V_Sigma_g^+ on the mesh (GeV)"""
-    return loadmat(os.path.join(DATA_DIR, f'wf_{flavor}_nomix.mat'))['dVSig'].ravel()
-
-
-def load_gaps(flavor):
-    return load_dV(flavor), load_dVS(flavor)
+VARIANTS = {'NL': True, 'L': False}     # variant -> nonloc
 
 
 def hybrid_state(lib, h, S=0, Jcal=None):
@@ -84,42 +65,40 @@ def hybrid_state(lib, h, S=0, Jcal=None):
     return st
 
 
-def params(flavor, variant, kH, gaps):
-    """gaps: (dV, dVS) from load_gaps"""
-    gap, nl = VARIANTS[variant]
-    dV, dVS = gaps
-    return Params(flavor, kH=kH, nonloc=nl, gap=gap, dV=dV, dVS=dVS)
+def params(flavor, variant, kH):
+    """Params of variant 'NL' or 'L' with hybrid couplings kH"""
+    return Params(flavor, kH=kH, nonloc=VARIANTS[variant])
 
 
-def gamma_split(flavor, lib, gaps, h, fin, variant, kH, S=0, Jcal=None, Jf=None):
+def gamma_split(flavor, lib, h, fin, variant, kH, S=0, Jcal=None, Jf=None):
     """{'total', 'Pi', 'Sigma', 'int'} widths in keV of hybrid h -> final (label,n,l,mass) + gamma,
     and the photon energy. S: heavy-quark spin; Jcal: total angular momentum of the
     hybrid; Jf: total angular momentum J' of the final quarkonium (both = J, l' for S = 0)."""
     st = hybrid_state(lib, h, S=S, Jcal=Jcal)
     f = lib.quarkonium(fin[1], fin[2], S=S, J=Jf, mass=fin[3])
     E = photon_energy(h[6], fin[3])
-    sp = width_split(f, st, E, params(flavor, variant, kH, gaps), lib.r)
+    sp = width_split(f, st, E, params(flavor, variant, kH), lib.r)
     return {k: v * GEV2KEV for k, v in sp.items()}, E
 
 
-def gamma(flavor, lib, gaps, h, fin, variant, kH, S=0, Jcal=None, Jf=None):
+def gamma(flavor, lib, h, fin, variant, kH, S=0, Jcal=None, Jf=None):
     """width in keV of hybrid h -> final (label,n,l,mass) + gamma, and the photon energy"""
-    sp, E = gamma_split(flavor, lib, gaps, h, fin, variant, kH, S, Jcal, Jf)
+    sp, E = gamma_split(flavor, lib, h, fin, variant, kH, S, Jcal, Jf)
     return sp['total'], E
 
 
-def quadratic_form(flavor, lib, gaps, h, fin, variant):
+def quadratic_form(flavor, lib, h, fin, variant):
     """Gamma = c^T Q c with c = (c1, c2, c3, c4)/(e e_Q). Returns Q (4x4, keV)."""
     n = 4
     e = np.eye(n)
     G = {}
     for i in range(n):
-        G[(i, i)] = gamma(flavor, lib, gaps, h, fin, variant, tuple(e[i]))[0]
+        G[(i, i)] = gamma(flavor, lib, h, fin, variant, tuple(e[i]))[0]
     Q = np.zeros((n, n))
     for i in range(n):
         Q[i, i] = G[(i, i)]
         for j in range(i + 1, n):
-            gij = gamma(flavor, lib, gaps, h, fin, variant, tuple(e[i] + e[j]))[0]
+            gij = gamma(flavor, lib, h, fin, variant, tuple(e[i] + e[j]))[0]
             Q[i, j] = Q[j, i] = 0.5 * (gij - G[(i, i)] - G[(j, j)])
     return Q
 
@@ -143,9 +122,8 @@ def allowed_channel(h, fin):
     return ((-1) ** fin[2] == -xi * (-1) ** J) and abs(fin[2] - J) <= 2
 
 
-def predictions(flavor, kappa, variants=('NL', 'L', 'pot-NL', 'pot-L')):
+def predictions(flavor, kappa, variants=('NL', 'L')):
     lib = Library(flavor)
-    gaps = load_gaps(flavor)
     rows = []
     for h in HYBRIDS[flavor]:
         st = hybrid_state(lib, h)
@@ -158,14 +136,13 @@ def predictions(flavor, kappa, variants=('NL', 'L', 'pot-NL', 'pot-L')):
                    'final': fin[0], 'M_f': fin[3], 'M_f_src': fin[4], 'Gtot_MeV': h[8]}
             kk = (kappa,) * 4
             for v in variants:
-                sp, E = gamma_split(flavor, lib, gaps, h, fin, v, kk)
+                sp, E = gamma_split(flavor, lib, h, fin, v, kk)
                 res[v] = sp['total']
                 for X in ('Pi', 'Sigma', 'int'):
                     res[f'{v}_{X}'] = sp[X]
             res['k_MeV'] = E * 1e3
             # magnetic couplings only (g_B_perp and g_B_par: c2 = c4 = kappa, c1 = c3 = 0)
-            for v in ('NL', 'pot-NL'):
-                res[f'mag_{v}'] = gamma(flavor, lib, gaps, h, fin, v, (0.0, kappa, 0.0, kappa))[0]
+            res['mag_NL'] = gamma(flavor, lib, h, fin, 'NL', (0.0, kappa, 0.0, kappa))[0]
             rows.append(res)
     return rows
 

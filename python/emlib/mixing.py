@@ -18,7 +18,7 @@ Final chi_cJ and eta_c are also taken from the mix=true families.
 import numpy as np
 from .states import Library, State
 from .amplitudes import Params, width, width_split, photon_energy
-from .hybrids import load_dV, load_dVS
+from .hybrids import VARIANTS
 
 GEV2KEV = 1e6
 
@@ -41,10 +41,8 @@ FINAL = {
 }
 
 
-def table(kappa_Q, kappa_H, variants=('NL', 'pot-NL')):
+def table(kappa_Q, kappa_H, variants=('NL', 'L')):
     lib = Library('c', mix=True)
-    dV = load_dV('c'); dVS = load_dVS('c')
-    from .hybrids import VARIANTS
     rows = []
     for (idx, content, cand, Mi) in INITIAL:
         st = lib.mixed('MixJ1', idx, 1, mass=Mi, name=cand)
@@ -57,8 +55,7 @@ def table(kappa_Q, kappa_H, variants=('NL', 'pot-NL')):
             E = photon_energy(Mi, Mf)
             row = {'state': cand, 'content': content, 'P_Q': wQ, 'final': fname, 'k_MeV': 1e3 * E}
             for v in variants:
-                gap, nl = VARIANTS[v]
-                P = Params('c', kappa_Q=kappa_Q, kH=(kappa_H,) * 4, nonloc=nl, gap=gap, dV=dV, dVS=dVS)
+                P = Params('c', kappa_Q=kappa_Q, kH=(kappa_H,) * 4, nonloc=VARIANTS[v])
                 sp = width_split(f, st, E, P, lib.r)
                 row[v] = sp['total'] * GEV2KEV
                 for X in ('E1', 'Pi', 'Sigma', 'int'):
@@ -67,13 +64,11 @@ def table(kappa_Q, kappa_H, variants=('NL', 'pot-NL')):
     return rows
 
 
-def hindered_psi2S_etac(kappa_H, variants=('NL', 'pot-NL')):
+def hindered_psi2S_etac(kappa_H, variants=('NL', 'L')):
     """psi(2S) -> gamma eta_c(1S) through the hybrid admixtures: the two paths
     (spin-0 hybrid component of psi(2S) -> eta_c; psi(2S) -> spin-1 hybrid
     component of eta_c) and their coherent sum."""
     lib = Library('c', mix=True)
-    dV = load_dV('c'); dVS = load_dVS('c')
-    from .hybrids import VARIANTS
     out = []
     for (iname, idx, Mi, fname, kf, Mf) in [('psi(2S)', 2, 3.686097, 'eta_c(1S)', 0, 2.98409),
                                             ('J/psi', 0, 3.096900, 'eta_c(1S)', 0, 2.98409)]:
@@ -83,8 +78,7 @@ def hindered_psi2S_etac(kappa_H, variants=('NL', 'pot-NL')):
         def sub(s, keep):
             return State(s.name, s.J, [c for c in s.comps if (c.kind, c.S) in keep])
         for v in variants:
-            gap, nl = VARIANTS[v]
-            P = Params('c', kappa_Q=1.0, kH=(kappa_H,) * 4, nonloc=nl, gap=gap, dV=dV, dVS=dVS)
+            P = Params('c', kappa_Q=1.0, kH=(kappa_H,) * 4, nonloc=VARIANTS[v])
             g1 = width(sub(f, {('Q', 0)}), sub(st, {('H', 0)}), E, P, lib.r) * GEV2KEV
             g2 = width(sub(f, {('H', 1)}), sub(st, {('Q', 1)}), E, P, lib.r) * GEV2KEV
             sp = width_split(f, st, E, P, lib.r)
@@ -100,15 +94,13 @@ def hindered_psi2S_etac(kappa_H, variants=('NL', 'pot-NL')):
 GAMMA_ETAC_EXP = {'J/psi': (1.31, 0.33), 'psi(2S)': (1.05, 0.15), 'psi(3770)': ('UL', 5.5)}
 
 
-def c4_scan(kappa, ts, variants=('pot-NL', 'NL')):
+def c4_scan(kappa, ts, variants=('NL', 'L')):
     """Gamma(V -> gamma eta_c(1S)) of the mixed 1-- states for c1 = c2 = c3 = kappa e e_c
     (v4: kappa = dkappa_c)
     and c4 = t kappa e e_c (t = ts). c4 is the only matching coefficient of the
     hybrid vertex that is not shared by the two channels (it fixes g_B_par), so the
     scan locates the value allowed by data."""
     lib = Library('c', mix=True)
-    dV = load_dV('c'); dVS = load_dVS('c')
-    from .hybrids import VARIANTS
     f = lib.mixed('MixS0J0', 0, 0)
     states = [('J/psi', 0, 3.096900), ('psi(2S)', 2, 3.686097), ('psi(3770)', 3, 3.7737),
               ('psi(4040)', 5, 4.040), ('psi(4415)', 10, 4.415)]
@@ -118,8 +110,7 @@ def c4_scan(kappa, ts, variants=('pot-NL', 'NL')):
             st = lib.mixed('MixJ1', idx, 1)
             E = photon_energy(Mi, 2.98409)
             for v in variants:
-                gap, nl = VARIANTS[v]
-                P = Params('c', kH=(kappa, kappa, kappa, t * kappa), nonloc=nl, gap=gap, dV=dV, dVS=dVS)
+                P = Params('c', kH=(kappa, kappa, kappa, t * kappa), nonloc=VARIANTS[v])
                 out.append({'c4_over_c': float(t), 'state': name + ' (mixed)', 'variant': v,
                             'Gamma_keV': width(f, st, E, P, lib.r) * GEV2KEV})
     return out

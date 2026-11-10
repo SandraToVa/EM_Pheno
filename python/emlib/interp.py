@@ -1,4 +1,4 @@
-"""Quarkonium E1 with an interpolated LEF (EM_Pheno v6, Sec. sec:pheno_E1_interpol of the notes):
+"""Quarkonium E1 with an interpolated LEF (EM_Pheno v6/v7, Sec. sec:pheno_E1_interpol of the notes):
 
     g_E1(r) = e r [ e_Q + kappa_Q f(r) ] = e e_Q r [ 1 + lambda f(r) ],   lambda = kappa_Q / e_Q,
 
@@ -10,10 +10,11 @@ The amplitude is linear in lambda, A = A_0 + lambda A_f, with A_0 the LO dipole 
 (g = e e_Q r) and A_f the same with g = e e_Q r f(r). Hence every width is a quadratic form
     Gamma(lambda) = G00 + 2 lambda G0f + lambda^2 Gff,
 computed once (spin sums included) and reused in the fit. <f> = G0f/G00 is the average of f
-over the transition (Gamma ~ G00 (1 + 2 lambda <f>) at first order). The O(k/m_Q) corrections
-of EGTKLY (quarkonium.rel_delta) multiply the whole amplitude, A -> A (1 + delta), at all r.
+over the transition (Gamma ~ G00 (1 + 2 lambda <f>) at first order). The relativistic corrections
+(quarkonium.rel_delta, default corr = '1m': EGTKLY O(k/m_Q) with spin and Delta l terms) multiply
+the whole amplitude, A -> A (1 + delta), at all r.
 The theory error uses the same quadratic form for the no-cancellation (|u_f u_i|) widths.
-Setting f = 1 reproduces quarkonium.Fitter exactly with kappa_old = 1 + kappa_Q/e_Q.
+Setting f = 1 reproduces quarkonium.Fitter (same corr) exactly with kappa_old = 1 + kappa_Q/e_Q.
 """
 import numpy as np
 from scipy.optimize import minimize_scalar, brentq
@@ -49,9 +50,10 @@ def _parts(final, initial, E, flavor, nonloc, fr, r, absval):
     return np.array([G00, G0f, Gff])
 
 
-def predict_parts(row, libs, nonloc=False, rel=False, n=2, r0=R0_EST):
+def predict_parts(row, libs, nonloc=False, corr='1m', n=2, r0=R0_EST):
     """quadratic-form coefficients of an observable: list (one per width, two for a ratio) of
-    dicts {'g': (G00, G0f, Gff), 'ga': same for |u_f u_i|}, keV; rel=True includes (1+delta)^2."""
+    dicts {'g': (G00, G0f, Gff), 'ga': same for |u_f u_i|, 'delta'}, keV, including (1+delta)^2
+    with delta = rel_delta(..., corr)."""
     lib = libs[row['flavor']]
     fr = f_hill(lib.r, n, r0)
     i = build_state(lib, row['init'])
@@ -61,10 +63,9 @@ def predict_parts(row, libs, nonloc=False, rel=False, n=2, r0=R0_EST):
         E = photon_energy(MASS[row['init']], MASS[flab])
         g = _parts(f, i, E, row['flavor'], nonloc, fr, lib.r, False)
         ga = _parts(f, i, E, row['flavor'], nonloc, fr, lib.r, True)
-        if rel:
-            fac = (1.0 + rel_delta(row['init'], flab, E)) ** 2
-            g, ga = g * fac, ga * fac
-        out.append({'g': g, 'ga': ga, 'delta': rel_delta(row['init'], flab, E)})
+        d = rel_delta(row['init'], flab, E, corr)
+        g, ga = g * (1.0 + d) ** 2, ga * (1.0 + d) ** 2
+        out.append({'g': g, 'ga': ga, 'delta': d})
     return out
 
 
@@ -81,10 +82,10 @@ class InterpFitter:
     """One-parameter fit of kappa_Q in g_E1 = e r [e_Q + kappa_Q f(r)], same chi^2 and
     theory-error model as quarkonium.Fitter."""
 
-    def __init__(self, libs, rows, nonloc=False, rel=True, n=2, r0=R0_EST):
-        self.rows, self.nonloc, self.rel, self.n, self.r0 = rows, nonloc, rel, n, r0
+    def __init__(self, libs, rows, nonloc=False, corr='1m', n=2, r0=R0_EST):
+        self.rows, self.nonloc, self.corr, self.n, self.r0 = rows, nonloc, corr, n, r0
         self.eQ = CHARGE[rows[0]['flavor']]
-        self.parts = [predict_parts(r, libs, nonloc, rel, n, r0) for r in rows]
+        self.parts = [predict_parts(r, libs, nonloc, corr, n, r0) for r in rows]
         self.meas = [k for k, r in enumerate(rows) if r['kind'] in ('width', 'ratio')]
         self.uls = [k for k, r in enumerate(rows) if r['kind'] in ('ul_width', 'ul_ratio')]
         self.Cexp = covariance([rows[k] for k in self.meas])

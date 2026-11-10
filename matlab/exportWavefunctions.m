@@ -24,10 +24,6 @@ function exportWavefunctions(qqbarPath, outDir, opts)
 %   sum_{ch,i} c^2 = 1, so that  int_0^inf f(r) u_a(r) u_b(r) dr
 %   = sum_i c_a,i c_b,i f(r_i)  (Gauss-Lagrange quadrature) and
 %   u(r_i) = c_i / sqrt(h*lambda_i).
-%   dV (1 x N): static gap V_Pi_u(r) - V_Sigma_g(r) at the mesh points (GeV).
-%   dVSig (1 x N): static gap V_Sigma_u^-(r) - V_Sigma_g(r) at the mesh points
-%         (GeV), from the single l = 1 channel of GQQbarS0Jcal0 (pure Sigma_u^-)
-%         and the l = 1 quarkonium potential (same centrifugal term 2/r^2).
 %
 % Channel content of each family (see the potentialMatrix of each file):
 %   mix = false
@@ -45,6 +41,7 @@ function exportWavefunctions(qqbarPath, outDir, opts)
 %
 % Author: EM transitions phenomenology (Sandra Tomas), 2026
 
+% Creates a mesh for the schrodinger solver
 if nargin < 3, opts = struct(); end
 if ~isfield(opts,'N'),       opts.N = 100;      end
 if ~isfield(opts,'rmax'),    opts.rmax = 30;    end
@@ -56,44 +53,42 @@ if ~exist(outDir,'dir'), mkdir(outDir); end
 sopts.N = opts.N; sopts.rmax = opts.rmax;
 mesh = radialMesh(opts.N, opts.rmax);
 
+% For each charmonium and bottomonium
 masses = {'c', 1.496; 'b', opts.mb};
 for f = 1:size(masses,1)
     flav = masses{f,1}; m = masses{f,2};
+    % We reset the config to avoid any previous settings
     quarkoniumConfig('reset'); quarkoniumConfig('mix', false);
     hybridConfig('reset');     hybridConfig('mix', false);
+    % S structure gives the mesh parameters, and "r" intervals of the wavefunctions
     S = struct();
     S.r = mesh.r; S.h = mesh.h; S.lambda = mesh.lambda; S.m = m;
     S.N = opts.N; S.rmax = opts.rmax;
-    % quarkonium l = 0,1,2,3 and S = 0 hybrids J = 0,1,2 (Jcal = J); the S = 1
+    % Families: quarkonium l = 0,1,2,3 and S = 0 hybrids J = 0,1,2 (Jcal = J); the S = 1
     % hybrids are built in Python by coupling J with S = 1 (older exports: Hjc0..2)
     fams = {'Ql0', @QQbarS0J0; 'Ql1', @QQbarS0J1; 'Ql2', @QQbarS0J2; 'Ql3', @QQbarS0J3; ...
             'Hj0', @GQQbarS0Jcal0; 'Hj1', @GQQbarS0Jcal1; 'Hj2', @GQQbarS0Jcal2};
+    % For each family we get the potential matrix from the corresponding code in QQbarSpectrum
+    % and then solve the radial schrodinger equation with the defined mesh
     for k = 1:size(fams,1)
         [~,~,~,inf0] = fams{k,2}(m, 'potential');
         [E, C] = solveFamily(inf0.V, m, opts.nstates, sopts);
+        % Add to the S structure the energies and the coefficients of the wavefunctions for each family
         S.([fams{k,1} '_E']) = E; S.([fams{k,1} '_C']) = C;
     end
-    % static gap Pi_u - Sigma_g^+ on the mesh (GeV): (V_Pi - V_Sigma) from
-    % the l = 1 Pi_u channel of GQQbarS0Jcal1 and the l = 1 quarkonium
-    % potential (same centrifugal term, same constant shifts)
-    [~,~,~,infH] = GQQbarS0Jcal1(m, 'potential');
-    [~,~,~,infQ] = QQbarS0J1(m, 'potential');
-    VH = infH.V(mesh.r'); VQ = infQ.V(mesh.r');
-    S.dV = squeeze(VH(1,1,:) - VQ(1,1,:))' / m;
-    % static gap Sigma_u^- - Sigma_g^+ (used by the variant-B Sigma vertex)
-    [~,~,~,infS] = GQQbarS0Jcal0(m, 'potential');
-    VS = infS.V(mesh.r');
-    S.dVSig = squeeze(VS(1,1,:) - VQ(1,1,:))' / m;
     save('-v7', fullfile(outDir, sprintf('wf_%s_nomix.mat', flav)), '-struct', 'S');
     fprintf('exported %s (m = %.3f), mix = false\n', flav, m);
 end
 
-% mixing (charm only)
+% mixing (charm only) --> to be added for bottomonium if needed 
 m = 1.496;
+% We set the config to mix = true
 quarkoniumConfig('reset'); quarkoniumConfig('mix', true);
 hybridConfig('reset');     hybridConfig('mix', true);
+% Rewrite the S structure with same mesh and mass
 S = struct(); S.r = mesh.r; S.h = mesh.h; S.lambda = mesh.lambda; S.m = m;
 S.N = opts.N; S.rmax = opts.rmax;
+% Same families but with mixing
 fams = {'MixJ1', @QQbarS1J1; 'MixJ0', @QQbarS1J0; 'MixJ2', @QQbarS1J2; ...
         'MixS0J0', @QQbarS0J0; 'MixS0J1', @QQbarS0J1};
 for k = 1:size(fams,1)

@@ -1,10 +1,12 @@
-"""Consistency tests of the amplitude engine (EM_Pheno v3) against the closed
+"""Consistency tests of the amplitude engine against the closed
 formulas of the notes and standard results.
   1-3   Clebsch-Gordan, quarkonium E1 (spin 0 and 1)
   4     hybrid widths vs the lab-basis formula Eq. (eq:lab_Gamma_c), channel by
         channel: Gamma_PiPi, Gamma_SigmaSigma, Gamma_int, for every hybrid type
         and general c1..c4 (R_Pi, R_Sigma of Eqs. (eq:lab_RPi), (eq:lab_RSigma))
-  5-7   local limit of the non-local forms, spin-1 sum rule, potential gaps -> matched gaps
+  5-6   local limit of the non-local forms, spin-1 sum rule
+  7     E1 corrections and interpolated g_E1: f = 1 reproduces (1 + dkappa)^2 x LO for
+        corr = LO, 1m, 1m2; spin term of rel_delta only for corr = 1m
   8     non-local widths vs the multipole formulas (E1, Pi channel)
   9     spin-1 hybrids (Pi channel), 6j recoupling
   10    selection rules of the two channels: l = J states have no Sigma channel,
@@ -134,11 +136,28 @@ for Ji in (0, 1, 2):
     s = sum(width(lib.quarkonium(1, 0, S=1, J=1), Hs, 0.9, P, r) for _ in [0])
     check(f"spin-1 (s/d)1 Jcal={Ji} -> 1S(J=1) equals spin-0 width", s, G0, 1e-8)
 
-# 7. 'potential' gap variant with dV = pi/r reproduces the 'matched' variant
-k = lib.hybrid_index(1, 'plus', 1); H = lib.hybrid(1, k); f = lib.quarkonium(1, 0)
-for nl in (False, True):
-    Ps = Params('c', nonloc=nl); Pl = Params('c', nonloc=nl, gap='potential', dV=np.pi / r, dVS=3 * np.pi / r)
-    check(f"gap potential(dV=pi/r, dVS=3pi/r) == matched, nonlocal={nl}", width(f, H, 0.9, Pl, r), width(f, H, 0.9, Ps, r), 1e-10)
+# 7. relativistic corrections and interpolated g_E1(r) = e r [e_Q + kappa f(r)]:
+#    with f = 1 the quadratic form at lambda = kappa/e_Q equals predict_row at 1 + lambda (each corr),
+#    and corr = '1m' differs from '1m2' only by the EGTKLY spin term k/(8m) s [J_P(J_P+1) - 4]
+from emlib.quarkonium import predict_row, rel_delta, M_QUARK
+from emlib.interp import predict_parts, quad
+from emlib.data import DATA, MASS
+from emlib.amplitudes import photon_energy
+libs = {'c': lib, 'b': Library('b')}
+for rid in ('psi2S->chic0', 'chic2->Jpsi', 'hc->etac'):
+    row = [x for x in DATA if x['id'] == rid][0]
+    for corr in ('LO', '1m', '1m2'):
+        for nl in (False, True):
+            lam = -0.15
+            gi = quad(predict_parts(row, libs, nl, corr, None)[0]['g'], lam)
+            gr = predict_row(row, libs, nl, 1.0 + lam, corr)[0]
+            check(f"interp f=1 == (1+dkappa)^2 LO, {rid}, corr={corr}, nonlocal={nl}", gi, gr, 1e-10)
+for rid, JP, s_ in (('psi2S->chic0', 0, +1), ('psi2S->chic2', 2, +1), ('chic1->Jpsi', 1, -1)):
+    row = [x for x in DATA if x['id'] == rid][0]
+    Eg = photon_energy(MASS[row['init']], MASS[row['final']])
+    d = rel_delta(row['init'], row['final'], Eg, '1m') - rel_delta(row['init'], row['final'], Eg, '1m2')
+    check(f"spin term of rel_delta, {rid}", d, Eg / (8 * M_QUARK['c']) * s_ * (JP * (JP + 1) - 4), 1e-12)
+    check(f"no correction at LO, {rid}", 1.0 + rel_delta(row['init'], row['final'], Eg, 'LO'), 1.0, 1e-15)
 
 # 8. non-local widths vs the closed multipole formulas of the notes (hybrids: Pi channel)
 #    (quarkonium: Gamma = c1^2 E^3/pi sum_K C(lKl',00)^2/(2K+1) J_K^2;

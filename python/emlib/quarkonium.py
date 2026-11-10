@@ -21,42 +21,48 @@ def build_state(lib, label):
 M_QUARK = {'c': 1.496, 'b': 4.88}
 
 
-# v7: the spin-orbit (c_F^em) part of the O(k/m) correction is cancelled by the 1/m^2 c_S^em
-# spin-orbit operator (Brambilla, Pietrulewicz, Vairo 2012, Eqs. (86), (111), (119), (122)):
-# with the LO Schroedinger equation, (I2' + 2 I1)/(m^2 I3) = +-k_LO/(2m), so the two spin terms
-# sum to kappa_Q^em k/(2m)[J(J+1)/2 - 2], beyond our accuracy. Default: no spin term (SPIN = False);
-# SPIN = True (or spin=True) reproduces the EGTKLY delta of v5/v6.
-SPIN = False
+# Relativistic corrections of the E1 amplitude, A -> A (1 + delta) (option corr):
+#   'LO'   no correction, delta = 0.
+#   '1m'   O(k/m_Q) corrections of EGTKLY: c_F^em spin-orbit term + spin-independent Delta l term.
+#   '1m2'  '1m' + the 1/m^2 c_S^em spin-orbit operator (Brambilla, Pietrulewicz, Vairo 2012, Eq. (86)).
+#          With the LO Schroedinger equation, Eq. (119), (I2' + 2 I1)/(m^2 I3) = +-k_LO/(2m), so the
+#          c_S^em term cancels the c_F^em spin term (their Eq. (122)) and only the Delta l term is left.
+CORRECTIONS = ('LO', '1m', '1m2')
+# second theory-error option of each fit (the first is epsilon from chi2/ndf = 1, the third epsilon = 0):
+# epsilon = v^2 at LO, epsilon = v^3 once the O(v^2) corrections are included (v^2 = 0.3 charm, 0.1 bottom)
+EPS_ALT = {'LO': {'c': 0.3, 'b': 0.1}, '1m': {'c': 0.3 ** 1.5, 'b': 0.1 ** 1.5}, '1m2': {'c': 0.3 ** 1.5, 'b': 0.1 ** 1.5}}
+EPS_ALT_LABEL = {'LO': 'v2', '1m': 'v3', '1m2': 'v3'}
 
 
-def rel_delta(init, final, E, spin=None):
-    """O(k/m) correction of the E1 amplitude, A -> A (1 + delta):
-        delta = k/(8 m_Q) * ( s [J_P (J_P + 1) - 4] * spin  -  Delta_l / 3 ),
+def rel_delta(init, final, E, corr='1m2'):
+    """relative correction delta of the E1 amplitude (A -> A (1 + delta)) for option corr:
+        delta = k/(8 m_Q) * ( s [J_P (J_P + 1) - 4]  -  Delta_l / 3 ),
     Delta_l = l_i (l_i + 1) - l_f (l_f + 1), k = photon energy.
-    Spin-independent part (-Delta_l k/(24 m)): for P -> S (S -> P) it is the -k/6m (+k/6m) of
-    Eqs. (111)-(114) of Brambilla, Pietrulewicz, Vairo (2012) in the width, which combines their
-    Eqs. (80), (81) and the factor (1 - k/M) of their LO width (non-relativistic normalization here);
-    it is also the Delta_l term of EGTKLY (Eichten et al. 1980, App. E of the notes), used as well for
-    D -> P. Spin part (EGTKLY = BPV Eq. (85) with c_F^em = 1; s = -1 if the P wave is the initial
-    state, +1 if final; triplet S <-> P only): included only if spin=True (default: module SPIN,
-    False since v7, see above)."""
-    if spin is None:
-        spin = SPIN
+    Delta l term (corr = '1m', '1m2'): for P -> S (S -> P) it is the -k/6m (+k/6m) of Eqs. (111)-(114)
+    of Brambilla, Pietrulewicz, Vairo (2012) in the width (their Eqs. (80), (81) and the factor
+    (1 - k/M) of the LO width, non-relativistic normalization here); it is also the Delta l term of
+    EGTKLY (Eichten et al. 1980, App. E of the notes), used as well for D -> P.
+    Spin term (corr = '1m' only): EGTKLY = BPV Eq. (85) with c_F^em = 1; s = -1 if the P wave is the
+    initial state, +1 if final; triplet S <-> P only. Cancelled by the c_S^em term for corr = '1m2'."""
+    if corr == 'LO':
+        return 0.0
+    if corr not in CORRECTIONS:
+        raise ValueError(corr)
     fl, ni, li, Si, Ji = STATES[init]
     _, nf, lf, Sf, Jf = STATES[final]
     dl = li * (li + 1) - lf * (lf + 1)
     sp = 0.0
-    if spin and Si == 1 and {li, lf} == {0, 1}:
+    if corr == '1m' and Si == 1 and {li, lf} == {0, 1}:
         JP, sgn = (Ji, -1.0) if li == 1 else (Jf, +1.0)
         sp = sgn * (JP * (JP + 1) - 4)
     return E / (8.0 * M_QUARK[fl]) * (sp - dl / 3.0)
 
 
-def predict_row(row, libs, nonloc=False, kappa=1.0, rel=False):
+def predict_row(row, libs, nonloc=False, kappa=1.0, corr='LO'):
     """Returns (pred, pred_abs) at kappa (pred_abs: no-cancellation width used
     for the theory error).  Widths in keV; ratios dimensionless (and the
-    corresponding 'abs' ratio pair).  rel=True multiplies each width by
-    (1 + delta)^2, delta = rel_delta(...): the O(k/m) relativistic corrections."""
+    corresponding 'abs' ratio pair).  Each width is multiplied by (1 + delta)^2,
+    delta = rel_delta(..., corr) (delta = 0 for corr = 'LO')."""
     lib = libs[row['flavor']]
     P = Params(row['flavor'], kappa_Q=kappa, nonloc=nonloc)
     i = build_state(lib, row['init'])
@@ -65,10 +71,8 @@ def predict_row(row, libs, nonloc=False, kappa=1.0, rel=False):
         E = photon_energy(MASS[row['init']], MASS[flab])
         g = width(f, i, E, P, lib.r) * GEV2KEV
         ga = width(f, i, E, P, lib.r, absval=True) * GEV2KEV
-        if rel:
-            fac = (1.0 + rel_delta(row['init'], flab, E)) ** 2
-            g, ga = g * fac, ga * fac
-        return g, ga
+        fac = (1.0 + rel_delta(row['init'], flab, E, corr)) ** 2
+        return g * fac, ga * fac
     if row['kind'] in ('width', 'ul_width'):
         return G(row['final'])
     g1, a1 = G(row['final']); g2, a2 = G(row['final2'])
@@ -76,11 +80,13 @@ def predict_row(row, libs, nonloc=False, kappa=1.0, rel=False):
 
 
 class Fitter:
-    def __init__(self, libs, rows, nonloc=False, rel=False):
+    """fit of kappa_Q = 1 + dkappa_Q in g_E1 = kappa_Q e e_Q r, with corrections corr ('LO', '1m', '1m2')"""
+
+    def __init__(self, libs, rows, nonloc=False, corr='LO'):
         self.rows = rows
         self.nonloc = nonloc
-        self.rel = rel
-        self.pred1 = [predict_row(r, libs, nonloc, 1.0, rel) for r in rows]   # at kappa = 1
+        self.corr = corr
+        self.pred1 = [predict_row(r, libs, nonloc, 1.0, corr) for r in rows]   # at kappa = 1
         self.meas = [k for k, r in enumerate(rows) if r['kind'] in ('width', 'ratio')]
         self.uls = [k for k, r in enumerate(rows) if r['kind'] in ('ul_width', 'ul_ratio')]
         self.Cexp = covariance([rows[k] for k in self.meas])

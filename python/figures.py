@@ -1,8 +1,6 @@
-"""Figures for the phenomenology section (run after run_all.py). EM_Pheno v4: hybrid
-couplings normalized with dkappa_c = kappa_c - 1.
-Main text (matched gaps pi/r, 3pi/r; single coupling c_i = dkappa_c e e_c): fig_E1_ratios,
-fig_hybrid_integrand, fig_LEFs_B, fig_lattice_hybrids.  App. app:potential_gaps: fig_potential_gaps
-(matched versus potential gaps)."""
+"""Figures for the phenomenology section (run after run_all.py): fig_E1_ratios (LO fit),
+fig_hybrid_integrand, fig_LEFs_B, fig_lattice_hybrids (hybrid couplings c_i = dkappa_c e e_c,
+string gaps pi/r, 3pi/r)."""
 import os, sys, json
 import numpy as np
 import matplotlib
@@ -24,7 +22,7 @@ summ = json.load(open(os.path.join(RES, 'summary.json')))
 
 # ---------------------------------------------------------------- Fig. 1
 pulls = pd.read_csv(os.path.join(RES, 'quarkonium_pulls.csv'))
-p = pulls[(pulls['nonlocal'] == True) & (pulls['rel'] == False) & (pulls['kind'] == 'width')].copy()
+p = pulls[(pulls['nonlocal'] == True) & (pulls['corr'] == 'LO') & (pulls['kind'] == 'width')].copy()
 p = p[~p['id'].str.contains(r'\(1P\)$') | ~p['id'].str.startswith('Y3S')]   # drop hindered (shown in table)
 p['ratio'] = p['data'] / p['pred_kappa1']
 p['err'] = p['err_exp'] / p['pred_kappa1']
@@ -61,8 +59,8 @@ def style(ax, title=None):
         ax.set_title(title, fontsize=9, color=INK)
 
 
-# ---------------------------------------------------------------- Fig. 2: integrands (matched gaps)
-lib = Library('c'); r = lib.r; dV = HY.load_dV('c'); dVS = HY.load_dVS('c')
+# ---------------------------------------------------------------- Fig. 2: integrands
+lib = Library('c'); r = lib.r
 sig = 0.21
 h = [x for x in HY.HYBRIDS['c'] if x[0] == '1(s/d)1'][0]
 st = HY.hybrid_state(lib, h)
@@ -74,10 +72,8 @@ uPi = lib.u(cPi); uSig = lib.u(cSig); uf = lib.u(f.comps[0].c)
 base = uf * uPi
 w = 2 * np.sqrt(np.pi / sig) / r          # A_0 weight per unit c: (2 sqrt(pi)/sqrt(sigma)) / r
 bS = uf * uSig * w
-integ = {'Pi': {'mag': base, 'matched': base * (1 - E * r / np.pi),
-                'potential': base * np.sqrt(dV * r / np.pi) * (1 - E / dV)},
-         'Sigma': {'mag': bS, 'matched': bS * (1 - E * r / (3 * np.pi)),
-                   'potential': bS * np.sqrt(dVS * r / (3 * np.pi)) * (1 - E / dVS)}}
+integ = {'Pi': {'mag': base, 'equal': base * (1 - E * r / np.pi)},
+         'Sigma': {'mag': bS, 'equal': bS * (1 - E * r / (3 * np.pi))}}
 fig, axs = plt.subplots(1, 2, figsize=(7.4, 3.0))
 for ax, X, lm, lf, ttl in ((axs[0], 'Pi', r'$u_{\eta_c}u_\Pi$ ($g_{B\perp}$ only)', r'equal $c_i$: $\times(1-E_q r/\pi)$',
                             r'$\Pi_u$ channel: $A_1$ ($p_0=\sqrt{2/3}$)'),
@@ -85,7 +81,7 @@ for ax, X, lm, lf, ttl in ((axs[0], 'Pi', r'$u_{\eta_c}u_\Pi$ ($g_{B\perp}$ only
                             r'equal $c_i$: $\times(1-E_qr/3\pi)$', r'$\Sigma_u^-$ channel: $A_0$ ($s_0=\sqrt{1/3}$)')):
     ax.axhline(0, color=MUTED, lw=0.6)
     ax.plot(r, integ[X]['mag'], color=MUTED, lw=1.2, ls='--', label=lm)
-    ax.plot(r, integ[X]['matched'], color=C1, lw=2, label=lf)
+    ax.plot(r, integ[X]['equal'], color=C1, lw=2, label=lf)
     ax.set_xlim(0, 12); ax.set_xlabel(r'$r$ (GeV$^{-1}$)')
     style(ax, ttl); ax.legend(fontsize=7, loc='upper right')
 axs[0].set_ylabel('radial integrand (GeV)')
@@ -147,36 +143,4 @@ hdl, lbl = ax.get_legend_handles_labels()
 fig.legend(hdl, lbl, fontsize=6.8, loc='lower center', ncol=4, frameon=False)
 fig.tight_layout(rect=(0, 0.11, 1, 1)); save(fig, 'fig_lattice_hybrids')
 
-# ---------------------------------------------------------------- App. app:potential_gaps: summary figure
-fig, axs = plt.subplots(2, 2, figsize=(8.2, 6.4))
-ax = axs[0, 0]
-m = (r > 0.8) & (r < 15)
-ax.plot(r[m], np.pi / r[m], color=C1, lw=1.6, label=r'$\pi/r$')
-ax.plot(r[m], dV[m], color=C1, lw=1.6, ls='--', label=r'$\Delta V=V_{\Pi_u}-V_{\Sigma_g^+}$')
-ax.plot(r[m], 3 * np.pi / r[m], color=C2, lw=1.6, label=r'$3\pi/r$')
-ax.plot(r[m], dVS[m], color=C2, lw=1.6, ls='--', label=r'$\Delta V_\Sigma=V_{\Sigma_u^-}-V_{\Sigma_g^+}$')
-ax.axhline(E, color=MUTED, lw=0.8, ls=':')
-ax.text(10.5, E + 0.08, r'$E_q(\psi(4040)\to\gamma\eta_c)$', fontsize=6.5, color=MUTED, ha='center')
-ax.set_ylim(0, 4); ax.set_xlim(0, 15); ax.set_xlabel(r'$r$ (GeV$^{-1}$)'); ax.set_ylabel('gap (GeV)')
-style(ax, '(a) gaps'); ax.legend(fontsize=6.5, loc='upper right')
-for ax, X, ttl in ((axs[0, 1], 'Pi', r'(b) $\Pi_u$ integrand, $\psi(4040)\to\gamma\eta_c$'),
-                   (axs[1, 0], 'Sigma', r'(c) $\Sigma_u^-$ integrand, $\psi(4040)\to\gamma\eta_c$')):
-    ax.axhline(0, color=MUTED, lw=0.6)
-    ax.plot(r, integ[X]['mag'], color=MUTED, lw=1.0, ls=':', label='magnetic only')
-    ax.plot(r, integ[X]['matched'], color=C1, lw=1.8, label='matched gap')
-    ax.plot(r, integ[X]['potential'], color=C2, lw=1.8, ls='--', label='potential gap')
-    ax.set_xlim(0, 12); ax.set_xlabel(r'$r$ (GeV$^{-1}$)')
-    style(ax, ttl); ax.legend(fontsize=6.5, loc='upper right')
-ax = axs[1, 1]
-for v, ls in (('NL', '-'), ('pot-NL', '--')):
-    d = ge[ge['variant'] == v]
-    nm = 'matched' if v == 'NL' else 'potential'
-    ax.plot(d['E_q'], kc ** 2 * d['Gamma_k1_keV'], ls=ls, color=INK, lw=1.6, label=r'$\Gamma$, ' + nm)
-    ax.plot(d['E_q'], kc ** 2 * d['Pi_keV'], ls=ls, color=C1, lw=1.0, label=r'$\Gamma_{\Pi\Pi}$, ' + nm)
-    ax.plot(d['E_q'], kc ** 2 * d['Sigma_keV'], ls=ls, color=C2, lw=1.0, label=r'$\Gamma_{\Sigma\Sigma}$, ' + nm)
-lattice_points(ax, labels=False)
-ax.set_yscale('log'); ax.set_ylim(0.01, 1e4); ax.set_xlim(0.6, 1.5); ax.set_xlabel(r'$E_q$ (GeV)')
-ax.set_ylabel(r'$\Gamma(1(s/d)_1\to\gamma 1S)$ (keV), $\kappa_H=\delta\kappa_c$')
-style(ax, r'(d) $\Gamma(E_q)$ and lattice'); ax.legend(fontsize=5.5, loc='lower left', ncol=2)
-fig.tight_layout(); save(fig, 'fig_potential_gaps')
 print('figures written to', FIG)

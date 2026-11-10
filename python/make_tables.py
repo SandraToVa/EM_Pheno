@@ -1,7 +1,21 @@
-"""LaTeX tables for the phenomenology section, generated from results/*.csv
-(no hand transcription of numbers). Main text: matched gaps (variants NL, L).
-App. app:pheno_mixing: tab_mixing, tab_hindered. App. app:potential_gaps:
-tab_potential_gaps (matched versus potential gaps)."""
+"""All the LaTeX tables of the phenomenology notes, generated from results/ (run run_all.py first;
+no hand transcription of numbers). Written next to sec_pheno.tex (<EM transitions>/TeX file/tex_pheno,
+or $EMPHENO_TEX, or EM_Pheno_v7/tex). Table file -> label in sec_pheno.tex / app_pheno.tex:
+
+ quarkonium E1, g_E1 = (1 + dkappa_Q) e e_Q r  (quarkonium_fits.csv, quarkonium_pulls.csv)
+   tab_kappa.tex, tab_E1_fit.tex             tab:kappa, tab:E1            LO
+   tab_kappa_1m.tex, tab_E1_1m.tex           tab:kappa_1m, tab:E1_1m      + 1/m (c_F^em spin + Delta l)
+   tab_kappa_1m2.tex, tab_E1_1m2.tex         tab:kappa_1m2, tab:E1_1m2    + 1/m^2 c_S^em (Delta l only)
+ quarkonium E1, g_E1(r) = e r [e_Q + kappa_Q f(r)] + 1/m  (interp_fits.csv, interp_pulls.csv)
+   tab_kappa_interp.tex, tab_E1_interp.tex   tab:kappa_interp, tab:E1_interp
+ quarkonium versus lattice QCD  (quarkonium_lattice.csv, summary.json)
+   tab_lattice_chic0.tex, tab_quarkonium_lattice.tex, tab_lattice_radii.tex
+ hybrids (sections commented out in sec_pheno.tex)
+   tab_hybrids, tab_kappaH, tab_lattice_hybrids, tab_lattice_kappaH, tab_hybrid_models, tab_hybrid_summary
+ mixing (App. app:pheno_mixing): tab_mixing, tab_hindered
+
+    python3 make_tables.py        (from python/)
+"""
 import os, json, re
 import numpy as np
 import pandas as pd
@@ -32,6 +46,7 @@ def lab(s):
 
 def fmt(x, err=None):
     if err is None:
+        if not np.isfinite(x): return '--'
         if abs(x) >= 100: return f'{x:.0f}'
         if abs(x) >= 10: return f'{x:.1f}'
         if abs(x) >= 1: return f'{x:.2f}'
@@ -44,56 +59,86 @@ def fmt(x, err=None):
     return f'{x:.{d}f}({int(round(err * 10 ** d))})' if err > 0 else f'{x:.{d}f}'
 
 
-# --------------------------------------------------------- Tables: E1 data / fits (LO, and LO + relativistic corrections)
-import importlib
-QK = importlib.import_module('emlib.quarkonium')
-from emlib.data import DATA as _DATA, MASS as _MASS
-from emlib.amplitudes import photon_energy as _pe
+# --------------------------------------------------------- Tables: quarkonium E1 fits
 pulls = pd.read_csv(os.path.join(RES, 'quarkonium_pulls.csv'))
-_rowd = {r['id']: r for r in _DATA}
-
-
-def _delta(rid):
-    """relativistic amplitude correction(s) of an observable (one value, or two for a ratio)"""
-    r = _rowd[rid]
-    fins = [r['final']] + ([r['final2']] if 'final2' in r else [])
-    ds = [QK.rel_delta(r['init'], f, _pe(_MASS[r['init']], _MASS[f])) for f in fins]
-    return ' / '.join(f'{d:+.3f}' for d in ds)
+fits_all = pd.read_csv(os.path.join(RES, 'quarkonium_fits.csv'))
 
 
 def _dat(r):
     return f"{fmt(r['data'])} $\\pm$ {fmt(r['err_exp'])}" if r['kind'] in ('width', 'ratio') else f"$<${fmt(r['data'])}"
 
 
-for rel, fname in ((False, 'tab_E1_fit.tex'), (True, 'tab_E1_rel.tex')):
-    p = pulls[(pulls['nonlocal'] == True) & (pulls['rel'] == rel)]
+def kerr(k, lo, hi, shift=0.0):
+    """value^{+hi}_{-lo}; shift = 1 turns kappa into dkappa"""
+    v = k - shift
+    v = 0.0 if abs(v) < 5e-4 else v
+    return f"${v:+.3f}^{{+{hi:.3f}}}_{{-{lo:.3f}}}$"
+
+
+def _dl(s):
+    """delta column: 3 decimals"""
+    return ' / '.join(f'{float(x):+.3f}' for x in str(s).split(' / '))
+
+
+for corr, tk, te in (('LO', 'tab_kappa.tex', 'tab_E1_fit.tex'), ('1m', 'tab_kappa_1m.tex', 'tab_E1_1m.tex'),
+                     ('1m2', 'tab_kappa_1m2.tex', 'tab_E1_1m2.tex')):
     rows = []
-    for _, r in p.iterrows():
-        if rel:
-            rows.append(f"{lab(r['id'])} & {r['set']} & {_dat(r)} & {_delta(r['id'])} & {fmt(r['pred_kappa1'])} & "
-                        f"{fmt(r['pred_eps0'])} & {r['pull_eps0']:+.2f} & "
-                        f"{fmt(r['pred_fit'])} $\\pm$ {fmt(r['err_th'])} & {r['pull']:+.2f} \\\\")
-        else:
+    for _, r in fits_all[fits_all['corr'] == corr].iterrows():
+        rows.append(f"${r['flavor']}$ & {r['set']} & {'non-local' if r['nonlocal'] else 'local'} & "
+                    f"{int(r['N_meas'])}+{int(r['N_UL'])} & {r['eps_fit']:.3f} & {kerr(r['kappa'], r['dk_lo'], r['dk_hi'], 1)} & "
+                    f"{kerr(r['kappa_eps_alt'], r['dk_lo_alt'], r['dk_hi_alt'], 1)} & {r['chi2_eps_alt']:.1f}/{int(r['ndf'])} & "
+                    f"{kerr(r['kappa_eps0'], r['dk_lo_eps0'], r['dk_hi_eps0'], 1)} & {r['chi2_eps0']:.0f}/{int(r['ndf'])} \\\\")
+    with open(os.path.join(TEX, tk), 'w') as f:
+        f.write('\n'.join(rows) + '\n\\hline\n')
+    rows = []
+    for _, r in pulls[(pulls['nonlocal'] == True) & (pulls['corr'] == corr)].iterrows():
+        if corr == 'LO':
             rows.append(f"{lab(r['id'])} & {r['set']} & {_dat(r)} & {fmt(r['pred_kappa1'])} & "
                         f"{fmt(r['pred_fit'])} $\\pm$ {fmt(r['err_th'])} & {r['pull']:+.2f} & "
                         f"{fmt(r['pred_eps0'])} & {r['pull_eps0']:+.2f} \\\\")
-    with open(os.path.join(TEX, fname), 'w') as f:
+        else:
+            rows.append(f"{lab(r['id'])} & {r['set']} & {_dat(r)} & {_dl(r['delta'])} & {fmt(r['pred_kappa1'])} & "
+                        f"{fmt(r['pred_eps0'])} & {r['pull_eps0']:+.2f} & "
+                        f"{fmt(r['pred_fit'])} $\\pm$ {fmt(r['err_th'])} & {r['pull']:+.2f} \\\\")
+    with open(os.path.join(TEX, te), 'w') as f:
         f.write('\n'.join(rows) + '\n\\hline\n')
 
-fits_all = pd.read_csv(os.path.join(RES, 'quarkonium_fits.csv'))
-for rel, fname in ((False, 'tab_kappa.tex'), (True, 'tab_kappa_rel.tex')):
-    fits = fits_all[fits_all['rel'] == rel]
-    rows = []
-    for _, r in fits.iterrows():
-        rows.append(f"${'c' if r['flavor'] == 'c' else 'b'}$ & {r['set']} & {'non-local' if r['nonlocal'] else 'local'} & "
-                    f"{int(r['N_meas'])}+{int(r['N_UL'])} & {r['eps_fit']:.3f} & "
-                    f"${r['kappa'] - 1:+.3f}^{{+{r['dk_hi']:.3f}}}_{{-{r['dk_lo']:.3f}}}$ & "
-                    f"${r['kappa_eps_v2'] - 1:+.3f}^{{+{r['dk_hi_v2']:.3f}}}_{{-{r['dk_lo_v2']:.3f}}}$ & "
-                    f"{r['chi2_eps_v2']:.1f}/{int(r['ndf'])} & "
-                    f"${r['kappa_eps0'] - 1:+.3f}^{{+{r['dk_hi_eps0']:.3f}}}_{{-{r['dk_lo_eps0']:.3f}}}$ & "
+# --------------------------------------------------------- Tables: interpolated g_E1(r) (+ 1/m corrections)
+R0 = summ['interp']['r0_GeVinv']
+ifits = pd.read_csv(os.path.join(RES, 'interp_fits.csv'))
+rows = []
+for n in (2, 7):
+    for _, r in ifits[(ifits['shape_kind'] == 'main') & (ifits['n'] == n)].iterrows():
+        rows.append(f"${r['flavor']}$ & {r['set']} & {'non-local' if r['nonlocal'] else 'local'} & {n} & "
+                    f"{int(r['N_meas'])}+{int(r['N_UL'])} & {r['eps_fit']:.3f} & {kerr(r['kappa'], r['k_lo'], r['k_hi'])} & "
+                    f"${r['kappa'] / r['eQ']:+.3f}$ & {kerr(r['kappa_eps_alt'], r['k_lo_alt'], r['k_hi_alt'])} & "
+                    f"{r['chi2_eps_alt']:.1f}/{int(r['ndf'])} & {kerr(r['kappa_eps0'], r['k_lo_eps0'], r['k_hi_eps0'])} & "
                     f"{r['chi2_eps0']:.0f}/{int(r['ndf'])} \\\\")
-    with open(os.path.join(TEX, fname), 'w') as f:
-        f.write('\n'.join(rows) + '\n\\hline\n')
+    rows.append('\\hline')
+with open(os.path.join(TEX, 'tab_kappa_interp.tex'), 'w') as f:
+    f.write('\n'.join(rows) + '\n')
+
+
+def mf(s):
+    """<f> column: values outside [-2, 2] (hindered transitions, node cancellations) shown as 'node'"""
+    out = []
+    for v in str(s).split(' / '):
+        x = float(v)
+        out.append(f'{x:.2f}' if abs(x) <= 2 else r'\textit{node}')
+    return ' / '.join(out)
+
+
+ip = pd.read_csv(os.path.join(RES, 'interp_pulls.csv'))
+p2 = ip[ip['n'] == 2].reset_index(drop=True)
+p7 = ip[ip['n'] == 7].reset_index(drop=True)
+rows = []
+for (_, a), (_, b) in zip(p2.iterrows(), p7.iterrows()):
+    assert a['id'] == b['id']
+    rows.append(f"{lab(a['id'])} & {a['set']} & {_dat(a)} & {_dl(a['delta'])} & {mf(a['meanf'])} & {fmt(a['pred_lo_corr'])} & "
+                f"{fmt(a['pred_eps0'])} & {a['pull_eps0']:+.2f} & {fmt(a['pred_fit'])} $\\pm$ {fmt(a['err_th'])} & {a['pull']:+.2f} & "
+                f"{fmt(b['pred_fit'])} $\\pm$ {fmt(b['err_th'])} & {b['pull']:+.2f} \\\\")
+with open(os.path.join(TEX, 'tab_E1_interp.tex'), 'w') as f:
+    f.write('\n'.join(rows) + '\n\\hline\n')
 
 # --------------------------------------------------------- Table: hybrid predictions
 hp = pd.read_csv(os.path.join(RES, 'hybrid_predictions.csv'))
@@ -197,20 +242,29 @@ with open(os.path.join(TEX, 'tab_hindered.tex'), 'w') as f:
     f.write('\n'.join(rows) + '\n\\hline\n')
 
 # --------------------------------------------------------- Table: lattice comparison
-lat = summ['lattice']
 rows = []
-for r in lat['radii']:
+for r in summ['lattice']['radii']:
     st = {'eta_c(1S)': r'$\eta_c(1S)$', 'J/psi': r'$J/\psi$', 'eta_c(2S)': r'$\eta_c(2S)$', 'chi_c0(1P)': r'$\chi_{c0}(1P)$'}[r['state']]
     rows.append(f"{st} & {r['nl']} & {r['r_rms_fm']:.3f} & {r['r_ch_ours_fm']:.3f} & {r['r_ch_lat_fm']:.3f}({int(round(r['err_lat_fm'] * 1000))}) & {r['ratio']:.2f} \\\\")
 with open(os.path.join(TEX, 'tab_lattice_radii.tex'), 'w') as f:
     f.write('\n'.join(rows) + '\n\\hline\n')
-c0 = lat['chic0_Jpsi']
-rows = [f"LO, local, $\\kappa_c=1$ & {c0['Gamma_LO_local_keV']:.0f} \\\\",
-        f"LO, non-local, $\\kappa_c=1$ & {c0['Gamma_LO_nonlocal_keV']:.0f} \\\\",
-        f"fit, non-local, $\\kappa_c={summ['kappa_c'][0]:.3f}$ & {c0['Gamma_fit_keV']:.0f}$\\pm${c0['dGamma_fit_keV']:.0f} \\\\",
-        f"lattice~\\cite{{Delaney:2023fsc}}, experimental masses & {c0['Gamma_lattice_keV']:.1f}(3) \\\\",
-        f"lattice~\\cite{{Delaney:2023fsc}}, lattice masses & {c0['Gamma_lattice_latmasses_keV']:.1f}(2) \\\\",
-        f"RPP 2026 & {c0['Gamma_PDG_keV']:.0f}$\\pm${c0['dGamma_PDG_keV']:.0f} \\\\"]
+QL = pd.read_csv(os.path.join(RES, 'quarkonium_lattice.csv'))
+c0 = QL[QL['id'] == 'chic0->Jpsi'].iloc[0]
+fit_ = lambda key: f"{c0[key + '_keV']:.0f}$\\pm${c0['d' + key + '_keV']:.0f}"
+rows = [f"LO, local, $\\kappa_c=1$ & {c0['LO_L_keV']:.0f} \\\\",
+        f"LO, non-local, $\\kappa_c=1$ & {c0['LO_NL_LO_keV']:.0f} \\\\",
+        f"LO $+\\,1/m$ (spin $+\\,\\Delta l$), non-local & {c0['LO_NL_1m_keV']:.0f} \\\\",
+        f"LO $+\\,1/m^2$ ($\\Delta l$ only), non-local & {c0['LO_NL_1m2_keV']:.0f} \\\\",
+        r"\hline",
+        f"fit, non-local, $\\delta\\kappa_c={c0['kappa_LO'] - 1:+.3f}$ & {fit_('fit_LO')} \\\\",
+        f"fit, non-local $+\\,1/m$, $\\delta\\kappa_c={c0['kappa_1m'] - 1:+.3f}$ & {fit_('fit_1m')} \\\\",
+        f"fit, non-local $+\\,1/m^2$, $\\delta\\kappa_c={c0['kappa_1m2'] - 1:+.3f}$ & {fit_('fit_1m2')} \\\\",
+        f"fit, $g_{{E1}}(r)$ interpolated $+\\,1/m$, $n=2$, $\\bar\\kappa_c={c0['kappa_interp_n2']:+.3f}$ & {fit_('interp_n2')} \\\\",
+        f"fit, $g_{{E1}}(r)$ interpolated $+\\,1/m$, $n=7$, $\\bar\\kappa_c={c0['kappa_interp_n7']:+.3f}$ & {fit_('interp_n7')} \\\\",
+        r"\hline",
+        f"lattice~\\cite{{Delaney:2023fsc}}, experimental masses & {c0['lat_keV']:.1f}(3) \\\\",
+        f"lattice~\\cite{{Delaney:2023fsc}}, lattice masses & {summ['chic0_lattice_masses_keV']:.1f}(2) \\\\",
+        f"RPP 2026 & {c0['data_keV']:.0f}$\\pm${c0['ddata_keV']:.0f} \\\\"]
 with open(os.path.join(TEX, 'tab_lattice_chic0.tex'), 'w') as f:
     f.write('\n'.join(rows) + '\n\\hline\n')
 # --------------------------------------------------------- Tables: lattice hybrids
@@ -220,16 +274,6 @@ chtex = {'Y->eta_c': r'$Y(1^{--})\to\gamma\eta_c$', 'eta_c1->J/psi': r'$\eta_{c1
 dstex = {'quenched': r'quenched~\cite{Dudek:2009kk}', 'Nf3': r'$N_f{=}2{+}1$, quoted~\cite{Delaney:2023thesis}',
          'Nf3-F0': r'$N_f{=}2{+}1$, from $F(0)$', 'JS-kin': '--'}
 k2 = summ['dkappa_c'][0] ** 2          # v4: c_i = dkappa_c e e_c
-rows = []
-for (ch, ds), d in lh.groupby(['channel', 'dataset'], sort=False):
-    g = {r['variant']: r for _, r in d.iterrows()}
-    r0 = d.iloc[0]
-    lat = '--' if np.isnan(r0['lat_keV']) else f"{r0['lat_keV']:g}({r0['dlat_keV']:g})"
-    js = '--' if (np.isnan(r0['JS_keV']) or ds in ('Nf3', 'Nf3-F0')) else f"{r0['JS_keV']:.0f}"
-    vals = []
-    vals += [fmt(k2 * g['NL'][k]) for k in ('Gamma_k1_Pi_keV', 'Gamma_k1_Sigma_keV', 'Gamma_k1_int_keV', 'Gamma_k1_keV')]
-    vals += [fmt(k2 * g['L']['Gamma_k1_keV'])]
-    rows.append(f"{chtex[ch]} & {dstex[ds]} & {r0['M_i']:.3f} & {r0['E_q']*1e3:.0f} & {lat} & {js} & " + ' & '.join(vals) + ' \\\\')
 rows = []
 for (ch, ds), d in lh.groupby(['channel', 'dataset'], sort=False):
     g = {r['variant']: r for _, r in d.iterrows()}
@@ -262,19 +306,17 @@ for v in ('NL', 'L'):
 with open(os.path.join(TEX, 'tab_lattice_kappaH.tex'), 'w') as f:
     f.write('\n'.join(rows) + '\n\\hline\n')
 
-# --------------------------------------------------------- Quarkonium: other lattice calculations
-qe = pd.read_csv(os.path.join(RES, 'quarkonium_external.csv'))
+# --------------------------------------------------------- Quarkonium: lattice QCD versus all the fits
 qtex = {'chic0->Jpsi': r'$\chi_{c0}\to\gamma J/\psi$', 'chic1->Jpsi': r'$\chi_{c1}\to\gamma J/\psi$',
-        'hc->etac': r'$h_c\to\gamma\eta_c$', 'chic2->Jpsi': r'$\chi_{c2}\to\gamma J/\psi$',
-        'psi2(3823)->chic1': r'$\psi_2(3823)\to\gamma\chi_{c1}$'}
-qsrc = {'chic0->Jpsi': r'HSC~\cite{Delaney:2023fsc}', 'chic1->Jpsi': r'ETMC~\cite{Becirevic:2026gaf}',
-        'hc->etac': r'ETMC~\cite{Becirevic:2026gaf}$^b$', 'chic2->Jpsi': r'CLQCD~\cite{Li:2023zig}',
-        'psi2(3823)->chic1': r'CLQCD~\cite{Li:2023zig}'}
+        'chic2->Jpsi': r'$\chi_{c2}\to\gamma J/\psi$', 'psi2(3823)->chic1': r'$\psi_2(3823)\to\gamma\chi_{c1}$'}
+qsrc = {'HSC': r'HSC~\cite{Delaney:2023fsc}', 'ETMC': r'ETMC~\cite{Becirevic:2026gaf}', 'CLQCD': r'CLQCD~\cite{Li:2023zig}'}
 rows = []
-for _, r in qe[qe['id'] != 'hc->etac'].iterrows():   # h_c: no lattice photon width available (removed in the text)
+for _, r in QL.iterrows():
     dat = '--' if np.isnan(r['data_keV']) else f"{r['data_keV']:.0f}$\\pm${r['ddata_keV']:.0f}"
-    rows.append(f"{qtex[r['id']]} & {qsrc[r['id']]} & {r['lat_keV']:g}({r['dlat_keV']:g}) & {r['LO_L_keV']:.0f} & {r['LO_NL_keV']:.0f} & "
-                f"{r['fit_NL_keV']:.0f} & {dat} & {r['dkappa_eff']:+.3f} \\\\")
+    rows.append(f"{qtex[r['id']]} & {qsrc[r['source']]} & {r['lat_keV']:g}({r['dlat_keV']:g}) & {r['LO_L_keV']:.0f} & "
+                f"{r['LO_NL_LO_keV']:.0f} & {r['fit_LO_keV']:.0f} & {r['fit_1m_keV']:.0f} & {r['fit_1m2_keV']:.0f} & "
+                f"{r['interp_n2_keV']:.0f} & {r['interp_n7_keV']:.0f} & {dat} & {r['dkappa_eff_LO']:+.3f} & "
+                f"{r['dkappa_eff_1m']:+.3f} & {r['dkappa_eff_1m2']:+.3f} & {r['kappa_eff_interp_n2']:+.3f} \\\\")
 with open(os.path.join(TEX, 'tab_quarkonium_lattice.tex'), 'w') as f:
     f.write('\n'.join(rows) + '\n\\hline\n')
 
@@ -291,51 +333,6 @@ for _, r in he.iterrows():
 with open(os.path.join(TEX, 'tab_hybrid_models.tex'), 'w') as f:
     f.write('\n'.join(rows) + '\n\\hline\n')
 
-# --------------------------------------------------------- App. potential gaps: matched vs potential (all at dkappa_c)
-mx = pd.read_csv(os.path.join(RES, 'mixing_1mm.csv'))
-
-
-def hp_row(fl, hyb, fin, v):
-    r = hp[(hp['flavor'] == fl) & (hp['hybrid'] == hyb) & (hp['final'] == fin)].iloc[0]
-    return ' / '.join(fsplit_dk(r, v))
-
-
-def mixr(state, fin, v):
-    r = mx[(mx['state'] == state) & (mx['final'] == fin)].iloc[0]
-    return ' / '.join(dash(r[f'{v}_{X}'], r[v]) for X in ('Pi', 'Sigma', 'int')) + ' / ' + fmt(r[v])
-
-
-rows = []      # the first heading row is in app_pheno.tex (\multicolumn cannot follow \input)
-for fl, hyb, fin, lab_ in (('c', '1(s/d)1', 'eta_c(1S)', r'$1(s/d)_1\to\gamma\eta_c(1S)$ [$\psi(4040)$]'),
-                           ('c', '2(s/d)1', 'eta_c(1S)', r'$2(s/d)_1\to\gamma\eta_c(1S)$ [$\psi(4415)$]'),
-                           ('c', '3(s/d)1', 'eta_c(1S)', r'$3(s/d)_1\to\gamma\eta_c(1S)$ [$\psi(4660)$]'),
-                           ('c', '1p1', 'h_c(1P)', r'$1p_1\to\gamma h_c(1P)$ [$\chi_{c1}(4140)$]'),
-                           ('c', '1p0', 'h_c(1P)', r'$1p_0\to\gamma h_c(1P)$ [$\chi_{c0}(4500)$]')):
-    rows.append(f"{lab_} & {hp_row(fl, hyb, fin, 'NL')} & {hp_row(fl, hyb, fin, 'pot-NL')} \\\\")
-rows.append(r'\hline')
-rows.append(r'\multicolumn{3}{l}{\emph{BESIII $\gamma\eta_c$ limits, Eq.~\eqref{eq:UL_etac}: $\Gamma/\Gamma_{\rm UL}$}}\\')
-for cand in ('psi(4040)', 'psi(4415)'):
-    vals = []
-    for v in ('NL', 'pot-NL'):
-        g = hc[(hc['candidate'] == cand) & (hc['variant'] == v)].iloc[0]
-        vals.append(f"{k2 * g['Gamma_k1_keV'] / g['Gamma_UL_keV']:.1f}")
-    rows.append(f"{cand_tex(cand)} & " + ' & '.join(vals) + ' \\\\')
-rows.append(r'\hline')
-rows.append(r'\multicolumn{3}{l}{\emph{lattice, $N_f=2+1$~\cite{Delaney:2023thesis} (quoted widths; lattice $R=1.78\pm0.23$)}}\\')
-vals = []
-for v in ('NL', 'pot-NL'):
-    yu, eu = pick('Y->eta_c', 'Nf3', v), pick('eta_c1->J/psi', 'Nf3', v)
-    vals.append(f"{R(eu, yu):.2f} / {k2 * yu['Gamma_k1_keV'] / yu['lat_keV']:.1f} / {k2 * eu['Gamma_k1_keV'] / eu['lat_keV']:.1f}")
-rows.append(r"$R$ / $\Gamma(Y)/\Gamma_{\rm lat}$ / $\Gamma(\eta_{c1})/\Gamma_{\rm lat}$ & " + ' & '.join(vals) + ' \\\\')
-rows.append(r'\hline')
-rows.append(r'\multicolumn{3}{l}{\emph{mixed states (App.~\ref{app:pheno_mixing}), keV: $\Gamma_{\Pi\Pi}$ / $\Gamma_{\Sigma\Sigma}$ / $\Gamma_{\rm int}$ / $\Gamma$}}\\')
-for state, fin, lab_ in (('psi(2S)', 'eta_c(1S)', r'$\psi(2S)\to\gamma\eta_c$ (RPP $1.05\pm0.15$)'),
-                         ('psi(3770)', 'eta_c(1S)', r'$\psi(3770)\to\gamma\eta_c$ (BESIII $<5.5$)'),
-                         ('psi(3770)', 'eta_c(2S)', r'$\psi(3770)\to\gamma\eta_c(2S)$ (BESIII $<29.4$)'),
-                         ('psi(4230)', 'eta_c(1S)', r'$\psi(4230)\to\gamma\eta_c$')):
-    rows.append(f"{lab_} & {mixr(state, fin, 'NL')} & {mixr(state, fin, 'pot-NL')} \\\\")
-with open(os.path.join(TEX, 'tab_potential_gaps.tex'), 'w') as f:
-    f.write('\n'.join(rows) + '\n\\hline\n')
 # --------------------------------------------------------- Summary of the hybrid comparisons at kappa_H = dkappa_c
 def lrow(ch, ds, v):
     x = pick(ch, ds, v)
