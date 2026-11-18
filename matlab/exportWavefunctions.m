@@ -28,8 +28,12 @@ function exportWavefunctions(qqbarPath, outDir, opts)
 % Families (no quarkonium-hybrid mixing, mix = false):
 %   Ql<l>    : quarkonium, orbital l = 0,1,2,3, from QQbarS0J<l> (S = 0, J = l;
 %              at LO the radial functions do not depend on S and J)
+%   Hj<J>    : hybrids with J = l (x) 1_gluon = 0,1,2 and S = 0 (Jcal = J), from GQQbarS0Jcal<J>;
+%              channels (see their potentialMatrix): Hj0 [l=1], Hj1 [l=1; l=2; l=0],
+%              Hj2 [l=2; l=3; l=1]. The S = 1 hybrids have the same radial functions at LO
+%              and are built in Python (emlib/states.py). (v8 and older exports: Hjc0..Hjc2.)
 %
-% Author: EM transitions phenomenology (Sandra Tomas), 2026
+% Author: EM transitions phenomenology (Sandra Tomas), 2026 (v10: hybrid families restored)
 
 % Creates a mesh for the schrodinger solver
 if nargin < 3, opts = struct(); end
@@ -55,7 +59,9 @@ for f = 1:size(masses,1)
     S.r = mesh.r; S.h = mesh.h; S.lambda = mesh.lambda; S.m = m;
     S.N = opts.N; S.rmax = opts.rmax;
     % Families: quarkonium l = 0,1,2,3 (the radial functions are those of S = 0, J = l)
-    fams = {'Ql0', @QQbarS0J0; 'Ql1', @QQbarS0J1; 'Ql2', @QQbarS0J2; 'Ql3', @QQbarS0J3};
+    % and S = 0 hybrids J = 0,1,2
+    fams = {'Ql0', @QQbarS0J0; 'Ql1', @QQbarS0J1; 'Ql2', @QQbarS0J2; 'Ql3', @QQbarS0J3; ...
+            'Hj0', @GQQbarS0Jcal0; 'Hj1', @GQQbarS0Jcal1; 'Hj2', @GQQbarS0Jcal2};
     % For each family we get the potential matrix from the corresponding code in QQbarSpectrum
     % and then solve the radial schrodinger equation with the defined mesh
     for k = 1:size(fams,1)

@@ -4,6 +4,8 @@ Conventions (as in the notes):
   * Condon-Shortley phase for Y_l^m.
   * Photon along +z with helicity h: eps*_h = -h/sqrt2 (1, -i h, 0).
   * cg(j1, m1, j2, m2, J, M) = <j1 m1 j2 m2 | J M>  (integer arguments).
+  * Spherical unit vectors chi_{+1} = -(1, i, 0)/sqrt2, chi_{-1} = (1, -i, 0)/sqrt2, chi_0 = (0, 0, 1)
+    (Eq. (eq:psi_hybrid_chi)); eps*_h(E z) = chi_h^*.
 """
 from functools import lru_cache
 from math import factorial, sqrt
@@ -66,6 +68,11 @@ def spin_factor(li, Si, Ji, lf, Jf):
     return (2 * Jf + 1) * max(li, lf) * sixj(Ji, Jf, 1, lf, li, Si) ** 2
 
 
+CHI = {+1: -np.array([1.0, 1.0j, 0.0]) / np.sqrt(2.0),
+       -1: np.array([1.0, -1.0j, 0.0]) / np.sqrt(2.0),
+       0: np.array([0.0, 0.0, 1.0], dtype=complex)}
+
+
 def eps_star(h):
     """complex-conjugate polarization vector of a photon moving along +z"""
     return -h / np.sqrt(2.0) * np.array([1.0, -1.0j * h, 0.0])
@@ -81,6 +88,7 @@ class AngularGrid:
         ph = np.arange(nphi) * 2.0 * np.pi / nphi
         self.TH, self.PH = np.meshgrid(th, ph, indexing='ij')
         self.W = np.outer(w, np.full(nphi, 2.0 * np.pi / nphi))
+        self.COS = np.cos(self.TH)
         self.rhat = np.stack([np.sin(self.TH) * np.cos(self.PH), np.sin(self.TH) * np.sin(self.PH),
                               np.cos(self.TH)], axis=-1)
         self._ycache = {}
@@ -91,3 +99,13 @@ class AngularGrid:
             self._ycache[(l, m)] = (np.zeros(self.TH.shape, dtype=complex) if abs(m) > l
                                     else sph_harm_y(l, m, self.TH, self.PH))
         return self._ycache[(l, m)]
+
+    def vecY(self, l, J, M):
+        """vector spherical harmonic Y^l_{JM} = sum_mu C(l 1 J; M-mu, mu) Y_l^{M-mu} chi_mu on the grid
+        (angular part of the hybrid wave function, Eq. (eq:psi_hybrid_chi)); shape (ntheta, nphi, 3)"""
+        out = np.zeros(self.TH.shape + (3,), dtype=complex)
+        for mu in (-1, 0, 1):
+            c = cg(l, M - mu, 1, mu, J, M)
+            if c != 0.0:
+                out += c * self.Y(l, M - mu)[..., None] * CHI[mu]
+        return out

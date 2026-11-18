@@ -1,93 +1,108 @@
-# EM_Pheno_v9: quarkonium E1 transitions
+# EM_Pheno_v10: quarkonium E1 and hybrid-to-quarkonium transitions
 
-Code of Sec. 5 (phenomenology) of the *EM Transitions Notes*, quarkonium E1 part. It does exactly what the text
-describes, and nothing else:
+Code of Sec. 5 (phenomenology) of the *EM Transitions Notes*. The quarkonium part is that of v9, unchanged (same
+numbers); v10 adds the hybrid part on top of it.
 
-* LEF of Eq. (eq:gE1_interp):
-  `g_E1(r) = e r [ e_Q + (A_Q r + kappa_Q x)/(1 + x) ]`, `x = (r/r0)^2`, `r0 = sqrt(pi/(6 sigma)) = 1.58 GeV^-1`
-  (`sigma = 0.21 GeV^2`).
-* Known 1/m corrections of the E1 amplitude, `A -> A (1 + delta_1m)`, Eq. (eq:delta_rel) (spin term for
-  spin-triplet S <-> P, Delta l term for all transitions). The 1/m^2 term is not included.
-* Flavour-independent fit: `A_Q = A/e_Q`, `kappa_Q = kappa/e_Q`, i.e. `A_c = -A_b/2`, `kappa_c = -kappa_b/2`;
-  two parameters `(A_b, kappa_b)` fitted to the charmonium and bottomonium data together.
-* Theory error `eps = v^2` (`eps_c = 0.3` for the charmonium observables, `eps_b = 0.1` for the bottomonium ones)
-  or `eps = 0` (experimental errors only).
-* Local (L) and non-local (NL) forms; reference fit: NL, core data.
-* The LO widths (`A_Q = kappa_Q = 0`, no 1/m) are kept and the corrections are added on top of them:
-  every width is `Gamma = (1 + delta_1m)^2 v^T G v`, `v = (1, A_Q, kappa_Q)`, and LO is `G[0,0]`.
+## Quarkonium E1 (as in v9)
 
-The hybrid part of the analysis (and the quarkonium-hybrid mixing) is not in this version; it is in
-`EM_Pheno_v8` and will be added back on top of this code.
+* LEF of Eq. (eq:gE1_interp): `g_E1(r) = e r [ e_Q + (A_Q r + kappa_Q x)/(1 + x) ]`, `x = (r/r0)^2`,
+  `r0 = sqrt(pi/(6 sigma)) = 1.58 GeV^-1`, with the known 1/m corrections, Eq. (eq:delta_rel).
+* Flavour-independent fit `A_c = -A_b/2`, `kappa_c = -kappa_b/2`; theory error `eps = v^2` (0.3 c, 0.1 b) or 0.
+* Reference fit: NL, core data: `A_b = -0.057 GeV`, `kappa_b = +0.044` (`kappa_c = -0.022`).
+
+## Hybrids (new in v10)
+
+* Vertex of Eq. (eq:lab_vertex) with the EST LEFs (Table tab:HQ_lef) and one string coupling, r dependent,
+  Eq. (eq:kappaH):
+  `c1 = c2 = c3 = c4 = e kappa_H(r)`, `kappa_H(r) = (B_Q r + kappa_Q x)/(1 + x)` (same n, r0).
+  Only the part of the coupling beyond the heavy-quark end-point charges radiates (with `c = e e_Q` the widths would
+  be tens of MeV); its long-distance limit `kappa_Q` is the one of the quarkonium fit, its short-distance slope `B_Q`
+  is fitted. Flavour relation as for `A_Q`: `B_c = -B_b/2` (Eq. eq:flavour_link_H). `A_Q` plays no role.
+* Fit of `B_c` to the quenched lattice widths of Dudek, Edwards, Thomas, PRD 79 (2009) 094504 [arXiv:0902.2241]:
+  `Gamma(Y_hyb -> gamma eta_c) = 42(18) keV` (M_Y = 4.400 GeV), `Gamma(eta_c1 -> gamma J/psi) = 115(16) keV`
+  (M = 4.300 GeV); statistical errors (the only ones given there) + theory error `eps = v_c^2 = 0.3`,
+  evaluated with the `t0` prescription (fixed at the minimum, iterated), because with the error evaluated at the
+  model width the fit is biased upwards. chi^2 has two minima (sign of `B_c`); both are kept.
+* Result (NL): `B_c = +0.081 (+0.013 -0.017) GeV`, chi^2 = 2.0/1 (other minimum `B_c = -0.050`, chi^2 = 2.1).
+  `R = Gamma(eta_c1)/Gamma(Y) = 0.61` at our order (spin symmetry), lattice `2.7 +- 1.2`.
+* Predictions: all S = 0 hybrids (7 multiplets per flavour) -> S = 0 quarkonia, all S = 1 members -> S = 1 quarkonia,
+  NL and L, with the split `Gamma = Gamma_PiPi + Gamma_SigmaSigma + Gamma_int` (Eq. eq:Gamma_split; note the minus
+  sign of the interference, `|p A1 - s A0|^2`).
+* Comparisons: J&S model (arXiv:2610.22088) at its kinematics, flux tube, GYS (Guo:2014zva), N_f = 2 eta_c1 mass
+  (Shi:2023sdy), BESIII limits on psi(4040), psi(4415) -> gamma eta_c.
 
 ## How to run
 
 ```
-# 1. (only if the wave functions change) MATLAB or octave-cli, from EM_Pheno_v9/matlab
+# 1. (only if the wave functions change) MATLAB or octave-cli, from EM_Pheno_v10/matlab
 exportWavefunctions('<path>/Ruben Mixing/QQbarSpectrum', '../data')
-# 2. from EM_Pheno_v9/python  (about 15 s)
-python3 run_all.py            # -> results/*.csv, results/summary.json
-python3 make_tables.py        # -> TeX file/tex_pheno/tab_*.tex (or $EMPHENO_TEX, or EM_Pheno_v9/tex)
-python3 ../tests/test_e1.py   # must end with ALL PASS
-# 3. from "TeX file/tex_pheno" (needs ../mainEM.aux: compile mainEM once)
+# 2.-5. from EM_Pheno_v10/python
+python3 run_all.py              # quarkonium, ~15 s  -> results/*.csv, summary.json
+python3 run_hybrids.py          # hybrids,    ~5 s   -> results/hybrid_*  (reads summary.json)
+python3 make_tables.py          # quarkonium tables  -> TeX file/tex_pheno/tab_*.tex
+python3 make_hybrid_tables.py   # hybrid tables      -> TeX file/tex_pheno/tab_H_*.tex
+python3 make_figures.py         # hybrid figures     -> TeX file/tex_pheno/fig_H_*.pdf and figures/
+python3 ../tests/test_e1.py     # 87 checks,  must end with ALL PASS
+python3 ../tests/test_hybrid.py # 165 checks, must end with ALL PASS
+# 6. from "TeX file/tex_pheno" (needs ../mainEM.aux: compile mainEM once)
 pdflatex pheno_standalone && bibtex pheno_standalone && pdflatex pheno_standalone && pdflatex pheno_standalone
 ```
 
-Requirements: Python 3 with `numpy`, `scipy` (>= 1.15, for `sph_harm_y`); `sympy` for the tests only.
+The hybrid part is a separate script because it only needs `kappa_Q` from the quarkonium fit (read from
+`results/summary.json`); it can be rerun alone when only the hybrid inputs change.
+
+Requirements: Python 3 with `numpy`, `scipy` (>= 1.15, for `sph_harm_y`); `matplotlib` for the figures; `sympy`
+for `test_e1.py` only. The output folder of the tables/figures is `../TeX file/tex_pheno` if it exists, otherwise
+`$EMPHENO_TEX` or `EM_Pheno_v10/tex`.
 
 ## Files
 
 ```
-data/wf_c_nomix.mat, wf_b_nomix.mat   LO wave functions (QQbarSpectrum, families Ql0..Ql3 on a common mesh)
-matlab/exportWavefunctions.m          writes the two .mat files
-python/emlib/angular.py               Clebsch-Gordan, 6j, spin factor S_if of the E1 widths, angular grid, Y_l^m
-python/emlib/states.py                Library (reads data/), State n (l S) J
-python/emlib/data.py                  RPP 2026 E1 data (widths, ratios, upper limits, correlations), masses
-python/emlib/e1.py                    g_E1(r), E1 amplitudes (L and NL), quadratic forms G, delta_1m, theory error
-python/emlib/fit.py                   Observable, flavour-independent Fit: chi^2, minimum, errors, pulls
-python/run_all.py                     all the numbers (results/)
-python/make_tables.py                 LaTeX table bodies
-tests/test_e1.py                      checks against closed formulas
-results/                              fits.csv, widths.csv, j_ratios.csv, lattice.csv, summary.json, *.log
+data/wf_c_nomix.mat, wf_b_nomix.mat   LO wave functions (QQbarSpectrum): Ql0..Ql3 and hybrids Hj0..Hj2
+                                      (named Hjc0..Hjc2 in the current files, exported with v8; both are read)
+matlab/exportWavefunctions.m          writes the two .mat files (v10: hybrid families restored)
+python/emlib/angular.py               CG, 6j, spin factor, angular grid, Y_l^m, vector harmonics Y^l_JM
+python/emlib/states.py                Library, State (quarkonium), HybridState, hybrid(), R_Pi/R_Sigma projections
+python/emlib/data.py                  RPP 2026 E1 data
+python/emlib/e1.py                    g_E1(r), E1 amplitudes, quadratic forms, delta_1m, theory error
+python/emlib/fit.py                   quarkonium Observable and Fit
+python/emlib/hybrid.py                kappa_H(r), hybrid vertex (L and NL), HybridTransition: 2x2 forms in (B_Q,
+                                      kappa_Q), Pi/Sigma/int split, Gamma_bar for the theory error
+python/emlib/hybrid_data.py           lattice data, hybrid multiplets and candidates, final states, other models,
+                                      BESIII limits
+python/emlib/hybrid_fit.py            HybridFit: chi^2(B_c), t0 iteration, minima, Delta chi^2 = 1 errors
+python/run_all.py                     quarkonium results
+python/run_hybrids.py                 hybrid results
+python/make_tables.py                 quarkonium table bodies
+python/make_hybrid_tables.py          hybrid table bodies
+python/make_figures.py                fig_H_gamma_E.pdf, fig_H_kappaH.pdf
+tests/test_e1.py, tests/test_hybrid.py
+results/                              csv, json, logs
+figures/                              pdf and png of the figures
 ```
 
-## What `run_all.py` computes
+## What `run_hybrids.py` computes
 
-1. `fits.csv`: for L and NL, and for the data sets `core` (charm and bottom states below the open-flavour
-   threshold, 20 observables) and `core+ext` (+ psi(3770), psi_2(3823)): the chi^2 at LO and at LO + 1/m (no free
-   parameter), and the fits at `eps = v^2` and `eps = 0`: `A_b`, `kappa_b` with Delta chi^2 = 1 profile errors,
-   their correlation (Hessian) and chi^2 = chi^2_c + chi^2_b. -> Table `tab:gE1_fit`.
-2. `widths.csv`: every observable at the reference fit (NL, core): data, LO, delta_1m, LO + 1/m, fit at
-   `eps = v^2` (with theory error, fit error and pull) and at `eps = 0` (with pull); `fitted = False` for the
-   `ext` observables, which are then predictions. -> Table `tab:E1_widths`.
-3. `j_ratios.csv`: J dependence of the spin multiplets. At LO the radial integral is the same for all J and
-   `Gamma_J = (4/3) alpha e_Q^2 E_J^3 S_J |I|^2`, `S_J = (2Jf+1) max(li,lf) {Ji Jf 1; lf li 1}^2`, so the reduced
-   width `Gamma_J/(S_J E_J^3)` relative to a reference J is 1. Data, LO (NL), LO + 1/m and the fit.
-   -> Table `tab:J_ratios`.
-4. `lattice.csv`: lattice E1 widths (HSC, ETMC, CLQCD) versus LO (L, NL) and the reference fit with its error.
-   -> Tables `tab:lattice`, `tab:quarkonium_lattice`.
-5. `summary.json`: reference parameters (and A_c, kappa_c), chi^2, g_E1/(e e_Q r) of the fit at a few r, lattice J
-   ratios.
+1. `hybrid_fit.csv`: fits of `B_c` (both minima): reference (NL, t0, eps = 0.3) and checks (L; theory error at
+   the model width; eps = 0; lattice masses +-1 sigma; kappa_c +-1 sigma). -> Table `tab:H_fit`.
+2. `hybrid_lattice.csv`: widths at the J&S kinematics (Y, H1(0-+), eta_c1, H1(2-+)), with lattice and J&S values;
+   Delta S = 1 channels are zero at our order. -> Table `tab:H_lattice`.
+3. `hybrid_predictions.csv`: S = 0 predictions, charm and bottom, NL with split and B_c range, L, other branch,
+   BR, `NL_eQ` (bottom with B_Q proportional to e_Q). -> Tables `tab:H_pred_c`, `tab:H_pred_b`.
+4. `hybrid_spin1.csv`: S = 1 members. -> Table `tab:H_spin1`.
+5. `hybrid_besiii.csv`: psi(4040), psi(4415) -> gamma eta_c vs BESIII. -> Table `tab:H_besiii`.
+6. `hybrid_curves.csv`, `hybrid_summary.json`: figure data and numbers quoted in the text.
 
-## Fit details
+## Tests (`tests/test_hybrid.py`, 165 checks)
 
-* chi^2 with the full experimental covariance (widths sharing a total width are correlated), asymmetric errors,
-  90% CL upper limits as half-normal likelihoods, and the theory error
-  `sigma_th^2 = 4 eps^2 Gamma Gamma_abs + 2 eps^4 Gamma_abs^2` (`Gamma_abs`: same width with `|u_f u_i|`).
-* Physical region: `-0.8 <= kappa_Q/e_Q <= 1` and `|A_Q/e_Q| <= 2 GeV` for both flavours (outside it the correction
-  flips the sign of the LO amplitude and the chi^2 has mirror minima). Minimum: grid over the region, then
-  Nelder-Mead from the four lowest local minima of the grid.
-* Errors of predictions: propagated from the covariance of `(A_b, kappa_b)` (inverse Hessian of chi^2/2).
+Closed formula (eq:lab_Gamma_c)-(eq:lab_A012) with four different r-dependent couplings for all kinds of hybrids
+and l' = 0..3 (total and split, including the sign of the interference); selection rules; P_Pi + P_Sigma = 1;
+heavy-quark spin sum rules; NL -> L at small E_q; quadratic form vs direct width; regression against v8 (c = e e_c);
+kappa_H limits and flavour relation; Gamma_bar >= Gamma; stationarity and t0 fixed point of the fit.
 
-## Tests (`tests/test_e1.py`, 87 checks)
+## Changes with respect to v9
 
-CG and 6j against sympy; LO local widths of all the data-set transitions against the closed formula with the 6j;
-spin sum rule; NL widths against the multipole expansion of `j0(q_z r/2)`; quadratic form against the direct width
-with `g_E1(r)`; `delta_1m`; flavour relations; equal reduced LO widths in a multiplet; theory error limits.
-
-## Changes with respect to v8
-
-Removed: the one-parameter fits `g_E1 = (1 + dkappa_Q) e e_Q r` (corr = LO, 1m, 1m2), the one-parameter
-interpolation `e r [e_Q + kappa_Q f(r)]`, the per-flavour two-parameter fits, n = 7 and r0 = 1 GeV^-1, the 1/m^2
-option, the epsilon of chi^2/ndf = 1 and epsilon = v^3, the X(3872) test, the hybrid, mixing and hybrid-lattice
-code (hybrids.py, mixing.py, lattice.py, the hybrid vertex of amplitudes.py), r_moments.py, figures.py, pandas.
-The fits reproduce those of v8 (`interp2.Interp2Fitter`, mode linked, corr = 1m) to all digits for the same eps.
+Added: `emlib/hybrid.py`, `hybrid_data.py`, `hybrid_fit.py`, `run_hybrids.py`, `make_hybrid_tables.py`,
+`make_figures.py`, `tests/test_hybrid.py`; `angular.py` (vector harmonics), `states.py` (hybrid states, mesh
+`h`, `lambda`, `Library.u`), `exportWavefunctions.m` (hybrid families). Quarkonium code and results unchanged.
+Not included (still only in v8): quarkonium-hybrid mixing, hybrid -> hybrid transitions.
