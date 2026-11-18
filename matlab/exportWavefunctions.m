@@ -17,27 +17,17 @@ function exportWavefunctions(qqbarPath, outDir, opts)
 %                    .N (mesh points, default 100), .rmax (default 30 GeV^-1),
 %                    .nstates (default 12), .mb (bottom mass, default 4.88)
 %
-% OUTPUT files: wf_c_nomix.mat, wf_b_nomix.mat, wf_c_mix.mat
-%   Each contains the mesh (r, h, lambda) and, for each family F, the
-%   fields  F_E (1 x nstates energies, GeV), F_C (nch x N x nstates)
-%   Lagrange-mesh coefficients c_{ch,i} of every state, normalized as
-%   sum_{ch,i} c^2 = 1, so that  int_0^inf f(r) u_a(r) u_b(r) dr
+% OUTPUT files: wf_c_nomix.mat, wf_b_nomix.mat
+%   Each contains the mesh (r, h, lambda, N, rmax, m) and, for each family F, the
+%   fields  F_E (1 x nstates energies, GeV), F_C (1 x N x nstates)
+%   Lagrange-mesh coefficients c_i of every state, normalized as
+%   sum_i c^2 = 1, so that  int_0^inf f(r) u_a(r) u_b(r) dr
 %   = sum_i c_a,i c_b,i f(r_i)  (Gauss-Lagrange quadrature) and
 %   u(r_i) = c_i / sqrt(h*lambda_i).
 %
-% Channel content of each family (see the potentialMatrix of each file):
-%   mix = false
-%     Ql<l>    : quarkonium, orbital l = 0,1,2,3 from QQbarS0J<l>
-%     Hj0      : hybrid J = 0 (S = 0, so Jcal = J), 1 channel  [l=1, Sigma_u only]       (p0)
-%     Hj1      : hybrid J = 1 (S = 0), 3 channels [l=1 Pi (p1); l=2; l=0]   (s/d)1
-%     Hj2      : hybrid J = 2 (S = 0), 3 channels [l=2 Pi (d2); l=3; l=1]   (p/f)2
-%   mix = true (charm only, cF = 0 for other masses)
-%     MixJ1    : GQQbarS0Jcal1 = QQbarS1J1, 6 channels
-%                [Q(l=1,S=1); H(l=1,S=0); Q(l=2,S=1); Q(l=0,S=1); H(l=2,S=0); H(l=0,S=0)]
-%     MixJ0    : QQbarS1J0, 2 channels [Q(l=1,S=1); H(l=1,S=0) Sigma]
-%     MixJ2    : QQbarS1J2, 6 channels [Q(l=2,S=1); H(l=2,S=0); Q(l=3,S=1); Q(l=1,S=1); H(l=3,S=0); H(l=1,S=0)]
-%     MixS0J0  : QQbarS0J0, 3 channels [Q(l=0,S=0); H(S=1) ...]  (only ch 1 used)
-%     MixS0J1  : QQbarS0J1, 5 channels [Q(l=1,S=0); H(S=1) ...]  (only ch 1 used)
+% Families (no quarkonium-hybrid mixing, mix = false):
+%   Ql<l>    : quarkonium, orbital l = 0,1,2,3, from QQbarS0J<l> (S = 0, J = l;
+%              at LO the radial functions do not depend on S and J)
 %
 % Author: EM transitions phenomenology (Sandra Tomas), 2026
 
@@ -64,10 +54,8 @@ for f = 1:size(masses,1)
     S = struct();
     S.r = mesh.r; S.h = mesh.h; S.lambda = mesh.lambda; S.m = m;
     S.N = opts.N; S.rmax = opts.rmax;
-    % Families: quarkonium l = 0,1,2,3 and S = 0 hybrids J = 0,1,2 (Jcal = J); the S = 1
-    % hybrids are built in Python by coupling J with S = 1 (older exports: Hjc0..2)
-    fams = {'Ql0', @QQbarS0J0; 'Ql1', @QQbarS0J1; 'Ql2', @QQbarS0J2; 'Ql3', @QQbarS0J3; ...
-            'Hj0', @GQQbarS0Jcal0; 'Hj1', @GQQbarS0Jcal1; 'Hj2', @GQQbarS0Jcal2};
+    % Families: quarkonium l = 0,1,2,3 (the radial functions are those of S = 0, J = l)
+    fams = {'Ql0', @QQbarS0J0; 'Ql1', @QQbarS0J1; 'Ql2', @QQbarS0J2; 'Ql3', @QQbarS0J3};
     % For each family we get the potential matrix from the corresponding code in QQbarSpectrum
     % and then solve the radial schrodinger equation with the defined mesh
     for k = 1:size(fams,1)
@@ -80,24 +68,6 @@ for f = 1:size(masses,1)
     fprintf('exported %s (m = %.3f), mix = false\n', flav, m);
 end
 
-% mixing (charm only) --> to be added for bottomonium if needed 
-m = 1.496;
-% We set the config to mix = true
-quarkoniumConfig('reset'); quarkoniumConfig('mix', true);
-hybridConfig('reset');     hybridConfig('mix', true);
-% Rewrite the S structure with same mesh and mass
-S = struct(); S.r = mesh.r; S.h = mesh.h; S.lambda = mesh.lambda; S.m = m;
-S.N = opts.N; S.rmax = opts.rmax;
-% Same families but with mixing
-fams = {'MixJ1', @QQbarS1J1; 'MixJ0', @QQbarS1J0; 'MixJ2', @QQbarS1J2; ...
-        'MixS0J0', @QQbarS0J0; 'MixS0J1', @QQbarS0J1};
-for k = 1:size(fams,1)
-    [~,~,~,inf0] = fams{k,2}(m, 'potential');
-    [E, C] = solveFamily(inf0.V, m, opts.nstates, sopts);
-    S.([fams{k,1} '_E']) = E; S.([fams{k,1} '_C']) = C;
-end
-save('-v7', fullfile(outDir, 'wf_c_mix.mat'), '-struct', 'S');
-fprintf('exported c, mix = true\n');
 quarkoniumConfig('reset'); hybridConfig('reset');
 end
 

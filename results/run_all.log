@@ -1,486 +1,54 @@
-== 1. quarkonium E1 fits: corr = LO, 1m (spin + Delta l), 1m2 (Delta l only)
-  LO  L  c core      eps=0.077 dkappa=-0.151 -0.029+0.032 | eps=v2=0.300: -0.157 chi2 0.5/6 | eps=0: -0.210 chi2 170.0/6
-  LO  L  c core+ext  eps=0.094 dkappa=-0.180 -0.029+0.032 | eps=v2=0.300: -0.184 chi2 1.1/9 | eps=0: -0.227 chi2 184.5/9
-  LO  L  b core      eps=0.045 dkappa=-0.003 -0.041+0.041 | eps=v2=0.100: +0.001 chi2 3.6/12 | eps=0: -0.162 chi2 107.7/12
-  LO  NL c core      eps=0.073 dkappa=-0.144 -0.028+0.031 | eps=v2=0.300: -0.149 chi2 0.4/6 | eps=0: -0.200 chi2 160.8/6
-  LO  NL c core+ext  eps=0.090 dkappa=-0.172 -0.028+0.031 | eps=v2=0.300: -0.176 chi2 1.1/9 | eps=0: -0.216 chi2 174.9/9
-  LO  NL b core      eps=0.040 dkappa=-0.002 -0.040+0.040 | eps=v2=0.100: +0.002 chi2 2.9/12 | eps=0: -0.164 chi2 104.9/12
-  1m  L  c core      eps=0.056 dkappa=-0.151 -0.023+0.024 | eps=v3=0.164: -0.155 chi2 0.9/6 | eps=0: -0.176 chi2 77.5/6
-  1m  L  c core+ext  eps=0.072 dkappa=-0.176 -0.024+0.025 | eps=v3=0.164: -0.179 chi2 2.2/9 | eps=0: -0.194 chi2 93.6/9
-  1m  L  b core      eps=0.047 dkappa=+0.000 -0.041+0.042 | eps=v3=0.032: -0.000 chi2 19.3/12 | eps=0: -0.157 chi2 107.6/12
-  1m  NL c core      eps=0.054 dkappa=-0.143 -0.022+0.024 | eps=v3=0.164: -0.146 chi2 0.8/6 | eps=0: -0.167 chi2 72.1/6
-  1m  NL c core+ext  eps=0.070 dkappa=-0.168 -0.023+0.025 | eps=v3=0.164: -0.170 chi2 2.1/9 | eps=0: -0.184 chi2 87.4/9
-  1m  NL b core      eps=0.041 dkappa=+0.001 -0.040+0.040 | eps=v3=0.032: +0.002 chi2 17.3/12 | eps=0: -0.159 chi2 105.3/12
-  1m2 L  c core      eps=0.075 dkappa=-0.144 -0.029+0.031 | eps=v3=0.164: -0.147 chi2 1.4/6 | eps=0: -0.212 chi2 186.1/6
-  1m2 L  c core+ext  eps=0.086 dkappa=-0.170 -0.027+0.030 | eps=v3=0.164: -0.172 chi2 2.9/9 | eps=0: -0.222 chi2 193.6/9
-  1m2 L  b core      eps=0.047 dkappa=-0.005 -0.041+0.042 | eps=v3=0.032: -0.006 chi2 19.5/12 | eps=0: -0.164 chi2 108.3/12
-  1m2 NL c core      eps=0.072 dkappa=-0.136 -0.028+0.030 | eps=v3=0.164: -0.138 chi2 1.3/6 | eps=0: -0.201 chi2 176.8/6
-  1m2 NL c core+ext  eps=0.083 dkappa=-0.162 -0.027+0.029 | eps=v3=0.164: -0.163 chi2 2.7/9 | eps=0: -0.212 chi2 183.9/9
-  1m2 NL b core      eps=0.041 dkappa=-0.004 -0.040+0.040 | eps=v3=0.032: -0.004 chi2 17.2/12 | eps=0: -0.166 chi2 105.4/12
-== 2. E1 fits with g_E1 = e r [e_Q + kappa_Q f(r)], corrections 1m
-  n= 2 r0=1.58 L  c core      eps=0.064 kappa=-0.1203 -0.0204+0.0218 (kappa/e_Q=-0.180) | eps=0.164: -0.1236 chi2 1.1/6 | eps=0: -0.1412 chi2 81.9/6
-  n= 2 r0=1.58 L  c core+ext  eps=0.077 kappa=-0.1412 -0.0201+0.0216 (kappa/e_Q=-0.212) | eps=0.164: -0.1435 chi2 2.5/9 | eps=0: -0.1551 chi2 97.7/9
-  n= 2 r0=1.58 L  b core      eps=0.044 kappa=+0.0141 -0.0159+0.0160 (kappa/e_Q=-0.042) | eps=0.032: +0.0149 chi2 18.4/12 | eps=0: +0.0773 chi2 84.5/12
-  n= 2 r0=1.58 NL c core      eps=0.060 kappa=-0.1140 -0.0198+0.0211 (kappa/e_Q=-0.171) | eps=0.164: -0.1172 chi2 1.0/6 | eps=0: -0.1336 chi2 75.8/6
-  n= 2 r0=1.58 NL c core+ext  eps=0.074 kappa=-0.1349 -0.0196+0.0210 (kappa/e_Q=-0.202) | eps=0.164: -0.1371 chi2 2.3/9 | eps=0: -0.1474 chi2 91.0/9
-  n= 2 r0=1.58 NL b core      eps=0.040 kappa=+0.0120 -0.0157+0.0156 (kappa/e_Q=-0.036) | eps=0.032: +0.0157 chi2 16.3/12 | eps=0: +0.0643 chi2 77.3/12
-  n= 7 r0=1.58 L  c core      eps=0.061 kappa=-0.1030 -0.0169+0.0180 (kappa/e_Q=-0.155) | eps=0.164: -0.1059 chi2 1.1/6 | eps=0: -0.1203 chi2 80.3/6
-  n= 7 r0=1.58 L  c core+ext  eps=0.076 kappa=-0.1208 -0.0169+0.0181 (kappa/e_Q=-0.181) | eps=0.164: -0.1227 chi2 2.4/9 | eps=0: -0.1322 chi2 96.3/9
-  n= 7 r0=1.58 L  b core      eps=0.043 kappa=+0.0137 -0.0117+0.0116 (kappa/e_Q=-0.041) | eps=0.032: +0.0138 chi2 17.7/12 | eps=0: +0.0422 chi2 105.7/12
-  n= 7 r0=1.58 NL c core      eps=0.058 kappa=-0.0976 -0.0164+0.0174 (kappa/e_Q=-0.146) | eps=0.164: -0.1002 chi2 1.0/6 | eps=0: -0.1139 chi2 74.5/6
-  n= 7 r0=1.58 NL c core+ext  eps=0.073 kappa=-0.1152 -0.0165+0.0176 (kappa/e_Q=-0.173) | eps=0.164: -0.1171 chi2 2.2/9 | eps=0: -0.1256 chi2 89.7/9
-  n= 7 r0=1.58 NL b core      eps=0.039 kappa=+0.0107 -0.0115+0.0114 (kappa/e_Q=-0.032) | eps=0.032: +0.0118 chi2 16.1/12 | eps=0: +0.0396 chi2 98.8/12
-  n= 2 r0=1.00 NL c core      eps=0.057 kappa=-0.1036 -0.0170+0.0180 (kappa/e_Q=-0.155) | eps=0.164: -0.1063 chi2 0.9/6 | eps=0: -0.1208 chi2 73.5/6
-  n= 2 r0=1.00 NL c core+ext  eps=0.072 kappa=-0.1221 -0.0172+0.0184 (kappa/e_Q=-0.183) | eps=0.164: -0.1239 chi2 2.2/9 | eps=0: -0.1332 chi2 88.6/9
-  n= 2 r0=1.00 NL b core      eps=0.041 kappa=+0.0069 -0.0143+0.0143 (kappa/e_Q=-0.021) | eps=0.032: +0.0082 chi2 16.9/12 | eps=0: +0.0636 chi2 92.7/12
-  n= 7 r0=1.00 NL c core      eps=0.054 kappa=-0.0958 -0.0151+0.0160 (kappa/e_Q=-0.144) | eps=0.164: -0.0981 chi2 0.9/6 | eps=0: -0.1115 chi2 72.3/6
-  n= 7 r0=1.00 NL c core+ext  eps=0.070 kappa=-0.1126 -0.0156+0.0166 (kappa/e_Q=-0.169) | eps=0.164: -0.1141 chi2 2.1/9 | eps=0: -0.1229 chi2 87.6/9
-  n= 7 r0=1.00 NL b core      eps=0.041 kappa=+0.0044 -0.0128+0.0129 (kappa/e_Q=-0.013) | eps=0.032: +0.0043 chi2 17.2/12 | eps=0: +0.0504 chi2 104.2/12
-  n=50 r0=1.58 NL c core      eps=0.057 kappa=-0.0964 -0.0159+0.0169 (kappa/e_Q=-0.145) | eps=0.164: -0.0990 chi2 0.9/6 | eps=0: -0.1123 chi2 73.7/6
-  n=50 r0=1.58 NL c core+ext  eps=0.072 kappa=-0.1137 -0.0161+0.0172 (kappa/e_Q=-0.171) | eps=0.164: -0.1155 chi2 2.2/9 | eps=0: -0.1239 chi2 88.9/9
-  n=50 r0=1.58 NL b core      eps=0.039 kappa=+0.0098 -0.0108+0.0108 (kappa/e_Q=-0.029) | eps=0.032: +0.0100 chi2 16.3/12 | eps=0: +0.0310 chi2 107.9/12
-== 2b. g_E1 = e r [e_Q + (A_Q r + kappa_Q x)/(1 + x)]: two-parameter fits per flavour
-  n=2 L  c core      eps=0.058 | v3: A=-0.1815 kappa=+0.0036 rho=-0.975 chi2 0.8/5 | eps=0: A=-0.1132 kappa=-0.0644 chi2 77.2/5
-  n=2 L  c core+ext  eps=0.077 | v3: A=-0.1410 kappa=-0.0460 rho=-0.977 chi2 2.2/8 | eps=0: A=-0.1098 kappa=-0.0808 chi2 93.6/8
-  n=2 L  b core      eps=0.032 | v3: A=-0.0726 kappa=+0.0576 rho=-0.702 chi2 11.2/11 | eps=0: A=-0.0510 kappa=+0.0633 chi2 64.3/11
-  n=2 NL c core      eps=0.057 | v3: A=-0.1617 kappa=-0.0034 rho=-0.975 chi2 0.7/5 | eps=0: A=-0.1047 kappa=-0.0627 chi2 71.9/5
-  n=2 NL c core+ext  eps=0.075 | v3: A=-0.1228 kappa=-0.0519 rho=-0.977 chi2 2.1/8 | eps=0: A=-0.1023 kappa=-0.0781 chi2 87.4/8
-  n=2 NL b core      eps=0.032 | v3: A=-0.0565 kappa=+0.0442 rho=-0.692 chi2 11.2/11 | eps=0: A=-0.0368 kappa=+0.0517 chi2 65.3/11
-  n=7 L  c core      eps=0.059 | v3: A=-0.1862 kappa=-0.0928 rho=-0.576 chi2 0.8/5 | eps=0: A=-0.1070 kappa=-0.1149 chi2 77.2/5
-  n=7 L  c core+ext  eps=0.077 | v3: A=-0.1407 kappa=-0.1135 rho=-0.558 chi2 2.2/8 | eps=0: A=-0.1044 kappa=-0.1270 chi2 93.5/8
-  n=7 L  b core      eps=0.035 | v3: A=-0.0474 kappa=+0.0016 rho=+0.493 chi2 12.6/11 | eps=0: A=+0.0607 kappa=+0.0497 chi2 87.6/11
-  n=7 NL c core      eps=0.057 | v3: A=-0.1643 kappa=-0.0884 rho=-0.573 chi2 0.7/5 | eps=0: A=-0.0971 kappa=-0.1090 chi2 71.9/5
-  n=7 NL c core+ext  eps=0.075 | v3: A=-0.1198 kappa=-0.1091 rho=-0.555 chi2 2.1/8 | eps=0: A=-0.0952 kappa=-0.1209 chi2 87.4/8
-  n=7 NL b core      eps=0.034 | v3: A=-0.0363 kappa=+0.0007 rho=+0.492 chi2 12.2/11 | eps=0: A=-0.0438 kappa=+0.0081 chi2 85.8/11
-== 2c. flavour-independent fit: A_c = -0.5 A_b, kappa_c = -0.5 kappa_b
-  ratio=-0.5 n=2 L  core      eps=0.152/0.029 | v3: A_b=-0.0701 kappa_b=+0.0587 chi2 16.3/18 (c 5.1, b 11.3) | eps=0: A_b=+0.1453 kappa_b=+0.0815 chi2 254.2/18 (c 116.7, b 137.5)
-  ratio=-0.5 n=2 L  core+ext  eps=0.162/0.031 | v3: A_b=-0.0693 kappa_b=+0.0594 chi2 20.6/21 (c 9.3, b 11.3) | eps=0: A_b=+0.1610 kappa_b=+0.0931 chi2 302.3/21 (c 145.0, b 157.3)
-  ratio=-0.5 n=2 NL core      eps=0.148/0.028 | v3: A_b=-0.0541 kappa_b=+0.0453 chi2 15.8/18 (c 4.6, b 11.3) | eps=0: A_b=+0.1492 kappa_b=+0.0688 chi2 237.2/18 (c 106.6, b 130.6)
-  ratio=-0.5 n=2 NL core+ext  eps=0.158/0.030 | v3: A_b=-0.0534 kappa_b=+0.0460 chi2 19.9/21 (c 8.6, b 11.3) | eps=0: A_b=+0.1640 kappa_b=+0.0819 chi2 281.3/21 (c 131.8, b 149.4)
-  ratio=-0.5 n=7 L  core      eps=0.163/0.031 | v3: A_b=-0.0451 kappa_b=+0.0040 chi2 17.8/18 (c 5.2, b 12.6) | eps=0: A_b=+0.1105 kappa_b=+0.1482 chi2 252.0/18 (c 116.7, b 135.3)
-  ratio=-0.5 n=7 L  core+ext  eps=0.170/0.033 | v3: A_b=-0.0442 kappa_b=+0.0050 chi2 22.2/21 (c 9.6, b 12.6) | eps=0: A_b=+0.1233 kappa_b=+0.1663 chi2 299.9/21 (c 144.9, b 154.9)
-  ratio=-0.5 n=7 NL core      eps=0.158/0.030 | v3: A_b=-0.0342 kappa_b=+0.0030 chi2 17.0/18 (c 4.7, b 12.3) | eps=0: A_b=+0.1156 kappa_b=+0.1438 chi2 234.2/18 (c 102.9, b 131.3)
-  ratio=-0.5 n=7 NL core+ext  eps=0.165/0.032 | v3: A_b=-0.0334 kappa_b=+0.0040 chi2 21.1/21 (c 8.8, b 12.3) | eps=0: A_b=+0.1273 kappa_b=+0.1619 chi2 276.3/21 (c 128.0, b 148.3)
-  ratio=+1.0 n=2 NL core      eps=0.148/0.029 | v3: A_b=-0.0610 kappa_b=+0.0417 chi2 15.9/18 (c 4.5, b 11.4) | eps=0: A_b=-0.1073 kappa_b=-0.0032 chi2 270.1/18 (c 121.4, b 148.7)
-  ratio=+1.0 n=7 NL core      eps=0.155/0.030 | v3: A_b=-0.0404 kappa_b=-0.0038 chi2 16.6/18 (c 4.2, b 12.4) | eps=0: A_b=-0.0932 kappa_b=-0.0629 chi2 268.6/18 (c 115.6, b 153.0)
-== 3. quarkonium E1 widths from lattice QCD
-  chic0->Jpsi        lat  208.6 | LO NL  200.1  fit LO  144.9  fit 1m  171.4  fit 1m2  143.5  interp n2  178.2 n7  176.4 | dkappa_eff +0.021  kappa_eff(n=2) -0.053
-  chic1->Jpsi        lat  327.0 | LO NL  417.3  fit LO  302.3  fit 1m  330.9  fit 1m2  296.5  interp n2  344.1 n7  340.6 | dkappa_eff -0.115  kappa_eff(n=2) -0.137
-  chic2->Jpsi        lat  368.0 | LO NL  557.3  fit LO  403.7  fit 1m  332.0  fit 1m2  394.2  interp n2  345.2 n7  341.7 | dkappa_eff -0.187  kappa_eff(n=2) -0.092
-  psi2(3823)->chic1  lat  337.0 | LO NL  376.1  fit LO  272.5  fit 1m  256.0  fit 1m2  260.9  interp n2  255.8 n7  255.7 | dkappa_eff -0.053  kappa_eff(n=2) -0.017
-== 4. hybrids
-  psi(4040) -> gamma eta_c NL: Gamma(k=1)=10633.0 keV [Pi 652.4, Sigma 16553.1, int -6572.6], UL 33.3 -> kappa_H < 0.056
-  psi(4040) -> gamma eta_c L: Gamma(k=1)=10811.2 keV [Pi 655.9, Sigma 16792.9, int -6637.6], UL 33.3 -> kappa_H < 0.056
-  psi(4415) -> gamma eta_c NL: Gamma(k=1)=18643.1 keV [Pi 1459.2, Sigma 30533.9, int -13350.1], UL 73.8 -> kappa_H < 0.063
-  psi(4415) -> gamma eta_c L: Gamma(k=1)=17340.2 keV [Pi 1995.5, Sigma 31100.5, int -15755.8], UL 73.8 -> kappa_H < 0.065
-   plane {'variant': 'NL', 'kSigma_over_kPi': 0.0, 'kappa_Pi_max': np.float64(0.22489345797147153)}
-   plane {'variant': 'NL', 'kSigma_over_kPi': 0.25, 'kappa_Pi_max': np.float64(0.871924634894563)}
-   plane {'variant': 'NL', 'kSigma_over_kPi': 0.5, 'kappa_Pi_max': np.float64(0.14886457547357682)}
-   plane {'variant': 'NL', 'kSigma_over_kPi': 1.0, 'kappa_Pi_max': np.float64(0.05599490277713822)}
-   plane {'variant': 'NL', 'kSigma_over_kPi': 2.0, 'kappa_Pi_max': np.float64(0.024912013610055066)}
-   plane {'variant': 'NL', 'kSigma_over_kPi': 'c4/c range at dkappa_c', 'kappa_Pi_max': '[0.094, 0.581]'}
-   plane {'variant': 'L', 'kSigma_over_kPi': 0.0, 'kappa_Pi_max': np.float64(0.19231527200813156)}
-   plane {'variant': 'L', 'kSigma_over_kPi': 0.25, 'kappa_Pi_max': np.float64(0.8508418402513547)}
-   plane {'variant': 'L', 'kSigma_over_kPi': 0.5, 'kappa_Pi_max': np.float64(0.14735939000619208)}
-   plane {'variant': 'L', 'kSigma_over_kPi': 1.0, 'kappa_Pi_max': np.float64(0.055531561806746524)}
-   plane {'variant': 'L', 'kSigma_over_kPi': 2.0, 'kappa_Pi_max': np.float64(0.024721223892400248)}
-   plane {'variant': 'L', 'kSigma_over_kPi': 'c4/c range at dkappa_c', 'kappa_Pi_max': '[0.134, 0.582]'}
-== 5. mixing
-   mix-constraint psi(3770) NL kappa_H < 0.07
-   mix-constraint psi(3770) L kappa_H < 0.07
-   mix-constraint psi(4040) NL kappa_H < 0.07
-   mix-constraint psi(4040) L kappa_H < 0.06
-   mix-constraint psi(4415) NL kappa_H < 0.07
-   mix-constraint psi(4415) L kappa_H < 0.07
-   {'transition': 'psi(2S)->gamma eta_c(1S)', 'variant': 'NL', 'k_MeV': 635.1593521967816, 'path_H_to_Q': np.float64(2.525617387566324), 'path_Q_to_H': np.float64(2.19461849488955), 'coherent': np.float64(9.428852082473746), 'coherent_Pi': np.float64(0.21410749510583488), 'coherent_Sigma': np.float64(12.48464070050797), 'coherent_int': np.float64(-3.2698961131400592)}
-   {'transition': 'psi(2S)->gamma eta_c(1S)', 'variant': 'L', 'k_MeV': 635.1593521967816, 'path_H_to_Q': np.float64(2.5209619445031084), 'path_Q_to_H': np.float64(2.2708300517470423), 'coherent': np.float64(9.577051087621612), 'coherent_Pi': np.float64(0.18881556363300933), 'coherent_Sigma': np.float64(12.455324811592053), 'coherent_int': np.float64(-3.06708928760345)}
-   {'transition': 'J/psi->gamma eta_c(1S)', 'variant': 'NL', 'k_MeV': 110.75534920404277, 'path_H_to_Q': np.float64(0.033335832497603496), 'path_Q_to_H': np.float64(0.02838543554453116), 'coherent': np.float64(0.1232436907734936), 'coherent_Pi': np.float64(0.03958691746472007), 'coherent_Sigma': np.float64(0.3025279641859592), 'coherent_int': np.float64(-0.21887119087718562)}
-   {'transition': 'J/psi->gamma eta_c(1S)', 'variant': 'L', 'k_MeV': 110.75534920404277, 'path_H_to_Q': np.float64(0.03332687090947218), 'path_Q_to_H': np.float64(0.028374934231841835), 'coherent': np.float64(0.12320457809373807), 'coherent_Pi': np.float64(0.03962757428831079), 'coherent_Sigma': np.float64(0.3025790460300952), 'coherent_int': np.float64(-0.21900204222466793)}
-== c4 scan
-   c4/c window from J/psi, psi(2S), psi(3770) -> gamma eta_c: {'NL': (-0.15, 0.275), 'L': (-0.175, 0.275)}
-== 6. lattice comparison
-   {'state': 'eta_c(1S)', 'nl': '1S', 'r_rms_fm': np.float64(0.4453147371997114), 'r_ch_ours_fm': np.float64(0.2226573685998557), 'r_ch_lat_fm': 0.243, 'err_lat_fm': 0.007, 'ratio': np.float64(0.9162854674891181), 'pull': np.float64(-2.906090200020615)}
-   {'state': 'J/psi', 'nl': '1S', 'r_rms_fm': np.float64(0.4453147371997114), 'r_ch_ours_fm': np.float64(0.2226573685998557), 'r_ch_lat_fm': 0.249, 'err_lat_fm': 0.004, 'ratio': np.float64(0.8942062995978141), 'pull': np.float64(-6.585657850036077)}
-   {'state': 'eta_c(2S)', 'nl': '2S', 'r_rms_fm': np.float64(0.8279219432388035), 'r_ch_ours_fm': np.float64(0.41396097161940176), 'r_ch_lat_fm': 0.62, 'err_lat_fm': 0.18, 'ratio': np.float64(0.667678986482906), 'pull': np.float64(-1.1446612687811013)}
-   {'state': 'chi_c0(1P)', 'nl': '1P', 'r_rms_fm': np.float64(0.6562778441087088), 'r_ch_ours_fm': np.float64(0.3281389220543544), 'r_ch_lat_fm': 0.339, 'err_lat_fm': 0.018, 'ratio': np.float64(0.967961421989246), 'pull': np.float64(-0.6033932192025342)}
-   {'Gamma_LO_local_keV': np.float64(203.2264491757986), 'Gamma_LO_nonlocal_keV': np.float64(200.0610736706475), 'Gamma_fit_keV': np.float64(144.9178482267045), 'dGamma_fit_keV': np.float64(38.45398474639981), 'Gamma_lattice_keV': 208.6, 'Gamma_lattice_latmasses_keV': 247.4, 'Gamma_PDG_keV': 167.4, 'dGamma_PDG_keV': np.float64(11.740171421235722), 'kappa_equiv_lattice': np.float64(1.0211178179022518), 'kappa_equiv_PDG': np.float64(0.914737385654824), 'lattice_over_PDG': 1.2461170848267622}
-   {'beta2_from_1S': np.float64(0.29453035686133294), 'beta2_from_1P': np.float64(0.2260151042867406), 'beta2_lattice': (0.304, 0.033)}
-   lattice channel solution {'variant': 'NL', 'Y_dataset': 'quenched', 'etac1_dataset': 'quenched', 'kappa_Pi': 0.4595, 'kappa_Sigma': -0.0068, 'kSigma_over_kPi': -0.014798694232861806}
-   lattice channel solution {'variant': 'NL', 'Y_dataset': 'Nf3', 'etac1_dataset': 'Nf3', 'kappa_Pi': 0.571, 'kappa_Sigma': 0.0089, 'kSigma_over_kPi': 0.015586690017513135}
-   lattice channel solution {'variant': 'NL', 'Y_dataset': 'Nf3-F0', 'etac1_dataset': 'Nf3', 'kappa_Pi': 0.9366, 'kappa_Sigma': 0.0576, 'kSigma_over_kPi': 0.06149903907751441}
-   lattice channel solution {'variant': 'L', 'Y_dataset': 'quenched', 'etac1_dataset': 'quenched', 'kappa_Pi': 0.3933, 'kappa_Sigma': -0.0182, 'kSigma_over_kPi': -0.046275108060005087}
-   lattice channel solution {'variant': 'L', 'Y_dataset': 'Nf3', 'etac1_dataset': 'Nf3', 'kappa_Pi': 0.4935, 'kappa_Sigma': -0.0047, 'kSigma_over_kPi': -0.009523809523809525}
-   lattice channel solution {'variant': 'L', 'Y_dataset': 'Nf3-F0', 'etac1_dataset': 'Nf3', 'kappa_Pi': 0.8083, 'kappa_Sigma': 0.0348, 'kSigma_over_kPi': 0.04305332178646542}
-   Y->eta_c        quenched NL E=1.188 G(kc)=    610.4  lat=42.0  kH=0.039
-   eta_c1->J/psi   quenched NL E=1.035 G(kc)=    366.9  lat=115.0  kH=0.083
-   Y->eta_c        Nf3      NL E=1.124 G(kc)=    497.6  lat=59.0  kH=0.051
-   Y->eta_c        Nf3-F0   NL E=1.124 G(kc)=    497.6  lat=29.9  kH=0.037
-   eta_c1->J/psi   Nf3      NL E=1.050 G(kc)=    387.9  lat=105.0  kH=0.077
-   H1(0-+)->J/psi  JS-kin   NL E=1.019 G(kc)=    346.4  lat=nan  kH=nan
-   H1(2-+)->J/psi  JS-kin   NL E=1.152 G(kc)=    544.6  lat=nan  kH=nan
-== 7. external comparisons
-   Y(1--)->eta_c 4.35 E=1.151 NL=544.0 L=575.1
-   H1(S=1)->J/psi 4.35 E=1.073 NL=418.9 L=436.1
-   eta_c1->J/psi 4.329 E=1.057 NL=396.5 L=411.7
-{
- "kappa_c_LO": [
-  0.8510981389107731,
-  0.0918697208187017,
-  0.1339693683745452,
-  0.3
- ],
- "kappa_b_LO": [
-  1.0020927452570436,
-  0.05650404966296685,
-  0.06182170271538601,
-  0.1
- ],
- "kappa_c_1m": [
-  0.853501561262629,
-  0.05477148266178178,
-  0.06645997375074875,
-  0.1643167672515498
- ],
- "kappa_b_1m": [
-  1.001565614297513,
-  0.038245498920400856,
-  0.0377653328939882,
-  0.0316227766016838
- ],
- "kappa_c_1m2": [
-  0.8616121508072205,
-  0.05552943169960067,
-  0.06740443321654777,
-  0.1643167672515498
- ],
- "kappa_b_1m2": [
-  0.9960029707484285,
-  0.038105347974694226,
-  0.037625574213510204,
-  0.0316227766016838
- ],
- "kappa_c": [
-  0.8510981389107731,
-  0.0918697208187017,
-  0.1339693683745452,
-  0.3
- ],
- "kappa_b": [
-  1.0020927452570436,
-  0.05650404966296685,
-  0.06182170271538601,
-  0.1
- ],
- "dkappa_c": [
-  -0.14890186108922687,
-  0.0918697208187017,
-  0.1339693683745452
- ],
- "dkappa_b": [
-  0.0020927452570436156,
-  0.05650404966296685,
-  0.06182170271538601
- ],
- "X3872": {
-  "Gamma_exp": 11.9,
-  "err": 5.202653169297373,
-  "Gamma_E1_local_k1": 25.718196307616555,
-  "Gamma_E1_nonlocal_k1": 37.2832381632614,
-  "Z_local": 0.6387739146453901,
-  "Z_nonlocal": 0.44062999198452063
- },
- "interp": {
-  "corr": "1m",
-  "r0_GeVinv": 1.5790273914182242,
-  "r0_fm": 0.31158470711744707,
-  "shapes": [
-   [
-    2,
-    1.5790273914182242,
-    "main"
-   ],
-   [
-    7,
-    1.5790273914182242,
-    "main"
-   ],
-   [
-    2,
-    1.0,
-    "check"
-   ],
-   [
-    7,
-    1.0,
-    "check"
-   ],
-   [
-    50,
-    1.5790273914182242,
-    "check"
-   ]
-  ],
-  "kappa_c_core_n2_r01.58": [
-   -0.11716305135951408,
-   0.04516509388615955,
-   0.05492478608827906,
-   0.1643167672515498
-  ],
-  "kappa_c_core+ext_n2_r01.58": [
-   -0.13712883715667643,
-   0.03836182208268152,
-   0.0454471065903711,
-   0.1643167672515498
-  ],
-  "kappa_b_core_n2_r01.58": [
-   0.015683105575961115,
-   0.015740531840688736,
-   0.015298159230345772,
-   0.0316227766016838
-  ],
-  "kappa_c_core_n7_r01.58": [
-   -0.10021429204507243,
-   0.03840376196352685,
-   0.046570791621049434,
-   0.1643167672515498
-  ],
-  "kappa_c_core+ext_n7_r01.58": [
-   -0.11711116191480174,
-   0.03268569134208356,
-   0.03864466918338008,
-   0.1643167672515498
-  ],
-  "kappa_b_core_n7_r01.58": [
-   0.01177476890591629,
-   0.01108919407164795,
-   0.01100248790888078,
-   0.0316227766016838
-  ],
-  "kappa_c_core_n2_r01.00": [
-   -0.1062845313080618,
-   0.04034936830697532,
-   0.04897444419075951,
-   0.1643167672515498
-  ],
-  "kappa_c_core+ext_n2_r01.00": [
-   -0.12392682517828002,
-   0.03439043855357041,
-   0.040678366925708004,
-   0.1643167672515498
-  ],
-  "kappa_b_core_n2_r01.00": [
-   0.008236256911136112,
-   0.01379545128375215,
-   0.013951659809244454,
-   0.0316227766016838
-  ],
-  "kappa_c_core_n7_r01.00": [
-   -0.09809551553768492,
-   0.036853691331301563,
-   0.0446936558881562,
-   0.1643167672515498
-  ],
-  "kappa_c_core+ext_n7_r01.00": [
-   -0.11408649972916136,
-   0.03151339760237014,
-   0.037247637677987014,
-   0.1643167672515498
-  ],
-  "kappa_b_core_n7_r01.00": [
-   0.004297272426597838,
-   0.012140686612429495,
-   0.012288078803466804,
-   0.0316227766016838
-  ],
-  "kappa_c_core_n50_r01.58": [
-   -0.09896645302231842,
-   0.037742256855977055,
-   0.04572968466933077,
-   0.1643167672515498
-  ],
-  "kappa_c_core+ext_n50_r01.58": [
-   -0.1155133670311684,
-   0.032163022470619,
-   0.03800155995140039,
-   0.1643167672515498
-  ],
-  "kappa_b_core_n50_r01.58": [
-   0.01001451084098928,
-   0.010270259981803045,
-   0.010217391292153386,
-   0.0316227766016838
-  ]
- },
- "chic0_lattice_masses_keV": 247.4,
- "ULs_gamma_etac": {
-  "psi(4040)": {
-   "sqrt_s": 4.009,
-   "sigma_UL_pb": 2.4,
-   "B_UL": 0.00039689210426486853,
-   "Gamma_UL_keV": 33.338936758248956,
-   "sigma_per_B_pb": 6046.983485462196
-  },
-  "psi(4415)": {
-   "sqrt_s": 4.42,
-   "sigma_UL_pb": 1.6,
-   "B_UL": 0.0006709481282483571,
-   "Gamma_UL_keV": 73.80429410731928,
-   "sigma_per_B_pb": 2384.685093581104
-  }
- },
- "c4_range_at_dkappa_c": {
-  "NL": {
-   "psi(4040)": [
-    0.07569281528953237,
-    0.5808886023526105
-   ],
-   "psi(4415)": [
-    0.09388106310637638,
-    0.632186293501937
-   ],
-   "common": [
-    0.09388106310637638,
-    0.5808886023526105
-   ]
-  },
-  "L": {
-   "psi(4040)": [
-    0.08430527648921537,
-    0.581777337705213
-   ],
-   "psi(4415)": [
-    0.13363931230251086,
-    0.6615259530717846
-   ],
-   "common": [
-    0.13363931230251086,
-    0.581777337705213
-   ]
-  }
- },
- "c4_window_mixed_states": {
-  "NL": [
-   -0.15,
-   0.275
-  ],
-  "L": [
-   -0.175,
-   0.275
-  ]
- },
- "lattice": {
-  "chic0_Jpsi": {
-   "Gamma_LO_local_keV": 203.2264491757986,
-   "Gamma_LO_nonlocal_keV": 200.0610736706475,
-   "Gamma_fit_keV": 144.9178482267045,
-   "dGamma_fit_keV": 38.45398474639981,
-   "Gamma_lattice_keV": 208.6,
-   "Gamma_lattice_latmasses_keV": 247.4,
-   "Gamma_PDG_keV": 167.4,
-   "dGamma_PDG_keV": 11.740171421235722,
-   "kappa_equiv_lattice": 1.0211178179022518,
-   "kappa_equiv_PDG": 0.914737385654824,
-   "lattice_over_PDG": 1.2461170848267622
-  },
-  "beta2": {
-   "beta2_from_1S": 0.29453035686133294,
-   "beta2_from_1P": 0.2260151042867406,
-   "beta2_lattice": [
-    0.304,
-    0.033
-   ]
-  },
-  "radii": [
-   {
-    "state": "eta_c(1S)",
-    "nl": "1S",
-    "r_rms_fm": 0.4453147371997114,
-    "r_ch_ours_fm": 0.2226573685998557,
-    "r_ch_lat_fm": 0.243,
-    "err_lat_fm": 0.007,
-    "ratio": 0.9162854674891181,
-    "pull": -2.906090200020615
-   },
-   {
-    "state": "J/psi",
-    "nl": "1S",
-    "r_rms_fm": 0.4453147371997114,
-    "r_ch_ours_fm": 0.2226573685998557,
-    "r_ch_lat_fm": 0.249,
-    "err_lat_fm": 0.004,
-    "ratio": 0.8942062995978141,
-    "pull": -6.585657850036077
-   },
-   {
-    "state": "eta_c(2S)",
-    "nl": "2S",
-    "r_rms_fm": 0.8279219432388035,
-    "r_ch_ours_fm": 0.41396097161940176,
-    "r_ch_lat_fm": 0.62,
-    "err_lat_fm": 0.18,
-    "ratio": 0.667678986482906,
-    "pull": -1.1446612687811013
-   },
-   {
-    "state": "chi_c0(1P)",
-    "nl": "1P",
-    "r_rms_fm": 0.6562778441087088,
-    "r_ch_ours_fm": 0.3281389220543544,
-    "r_ch_lat_fm": 0.339,
-    "err_lat_fm": 0.018,
-    "ratio": 0.967961421989246,
-    "pull": -0.6033932192025342
-   }
-  ]
- },
- "lattice_channel_solutions": [
-  {
-   "variant": "NL",
-   "Y_dataset": "quenched",
-   "etac1_dataset": "quenched",
-   "kappa_Pi": 0.4595,
-   "kappa_Sigma": -0.0068,
-   "kSigma_over_kPi": -0.014798694232861806
-  },
-  {
-   "variant": "NL",
-   "Y_dataset": "Nf3",
-   "etac1_dataset": "Nf3",
-   "kappa_Pi": 0.571,
-   "kappa_Sigma": 0.0089,
-   "kSigma_over_kPi": 0.015586690017513135
-  },
-  {
-   "variant": "NL",
-   "Y_dataset": "Nf3-F0",
-   "etac1_dataset": "Nf3",
-   "kappa_Pi": 0.9366,
-   "kappa_Sigma": 0.0576,
-   "kSigma_over_kPi": 0.06149903907751441
-  },
-  {
-   "variant": "L",
-   "Y_dataset": "quenched",
-   "etac1_dataset": "quenched",
-   "kappa_Pi": 0.3933,
-   "kappa_Sigma": -0.0182,
-   "kSigma_over_kPi": -0.046275108060005087
-  },
-  {
-   "variant": "L",
-   "Y_dataset": "Nf3",
-   "etac1_dataset": "Nf3",
-   "kappa_Pi": 0.4935,
-   "kappa_Sigma": -0.0047,
-   "kSigma_over_kPi": -0.009523809523809525
-  },
-  {
-   "variant": "L",
-   "Y_dataset": "Nf3-F0",
-   "etac1_dataset": "Nf3",
-   "kappa_Pi": 0.8083,
-   "kappa_Sigma": 0.0348,
-   "kSigma_over_kPi": 0.04305332178646542
-  }
- ]
-}
+== 1. flavour-independent fits, n = 2, r0 = 1.579 GeV^-1, with the 1/m corrections
+  L  core      N=20+0 | eps=v2: chi2 LO 5.3, LO+1/m 5.4, fit A_b=-0.0721 kappa_b=+0.0560 rho=-0.89 chi2 3.9/18 (1.6+2.3) | eps=0: chi2 LO 824, LO+1/m 548, fit A_b=+0.1453 kappa_b=+0.0815 chi2 254.2/18 (116.7+137.5)
+  L  core+ext  N=23+2 | eps=v2: chi2 LO 7.0, LO+1/m 6.9, fit A_b=-0.0718 kappa_b=+0.0567 rho=-0.89 chi2 5.4/21 (3.0+2.3) | eps=0: chi2 LO 1042, LO+1/m 714, fit A_b=+0.1610 kappa_b=+0.0931 chi2 302.3/21 (145.0+157.3)
+  NL core      N=20+0 | eps=v2: chi2 LO 4.5, LO+1/m 4.6, fit A_b=-0.0568 kappa_b=+0.0438 rho=-0.89 chi2 3.7/18 (1.4+2.3) | eps=0: chi2 LO 746, LO+1/m 496, fit A_b=+0.1492 kappa_b=+0.0688 chi2 237.2/18 (106.6+130.6)
+  NL core+ext  N=23+2 | eps=v2: chi2 LO 6.1, LO+1/m 6.0, fit A_b=-0.0565 kappa_b=+0.0445 rho=-0.89 chi2 5.1/21 (2.8+2.3) | eps=0: chi2 LO 942, LO+1/m 643, fit A_b=+0.1640 kappa_b=+0.0819 chi2 281.3/21 (131.8+149.4)
+== 2. widths at the reference fit (NL, core)
+  psi2S->chic0             fit  data     29.48 | LO     50.06 LO+1/m     43.06 | v2     42.31 +-     31.3 pull -0.41 | eps0     34.71 pull -4.36
+  psi2S->chic1             fit  data     28.86 | LO     43.19 LO+1/m     41.56 | v2     40.83 +-     30.2 pull -0.40 | eps0      33.5 pull -3.97
+  psi2S->chic2             fit  data     28.22 | LO     29.94 LO+1/m     31.67 | v2     31.12 +-       23 pull -0.13 | eps0     25.53 pull +2.44
+  chic0->Jpsi              fit  data     167.4 | LO     200.1 LO+1/m     235.3 | v2     236.9 +-      145 pull -0.48 | eps0     186.2 pull -1.60
+  chic1->Jpsi              fit  data       278 | LO     417.3 LO+1/m     454.3 | v2     457.3 +-      281 pull -0.64 | eps0     359.4 pull -4.86
+  chic2->Jpsi              fit  data     368.6 | LO     557.3 LO+1/m     455.7 | v2     458.8 +-      281 pull -0.32 | eps0     360.5 pull +0.35
+  hc->etac                 fit  data     499.2 | LO     867.6 LO+1/m       820 | v2     825.6 +-      506 pull -0.61 | eps0     648.7 pull -0.82
+  psi3770->chic0           pred data     193.1 | LO     406.7 LO+1/m     376.3 | v2     373.6 +-      229 pull -0.79 | eps0     301.1 pull -6.07
+  psi3770->chic1           pred data     67.73 | LO     127.5 LO+1/m     120.4 | v2     119.5 +-     73.3 pull -0.70 | eps0     96.32 pull -4.25
+  psi3770->chic2           pred data     17.41 | LO     4.931 LO+1/m     4.702 | v2     4.667 +-     2.86 pull +0.43 | eps0     3.762 pull +0.36
+  psi2(3823): chic2/chic1  pred data      0.28 | LO    0.2134 LO+1/m    0.2154 | v2    0.2154 +-    0.187 pull +0.30 | eps0    0.2154 pull +0.59
+  psi2(3823): chic0/chic1  pred data      0.24 | LO 4.201e-34 LO+1/m 4.118e-34 | v2 4.623e-34 +- 4.01e-34 pull +0.00 | eps0 7.741e-34 pull +0.00
+  Y2S->chib0(1P)           fit  data     1.215 | LO     1.404 LO+1/m     1.365 | v2     1.408 +-    0.326 pull -0.53 | eps0    0.3938 pull +5.06
+  Y2S->chib1(1P)           fit  data     2.207 | LO     2.143 LO+1/m     2.124 | v2     2.191 +-    0.507 pull +0.03 | eps0    0.6128 pull +7.18
+  Y2S->chib2(1P)           fit  data     2.287 | LO     2.211 LO+1/m     2.245 | v2     2.316 +-    0.535 pull -0.05 | eps0    0.6476 pull +7.49
+  Y3S->chib0(2P)           fit  data     1.199 | LO     1.402 LO+1/m     1.373 | v2     1.311 +-    0.294 pull -0.33 | eps0    0.4646 pull +4.49
+  Y3S->chib1(2P)           fit  data      2.56 | LO     2.269 LO+1/m     2.254 | v2     2.152 +-    0.482 pull +0.69 | eps0    0.7626 pull +5.33
+  Y3S->chib2(2P)           fit  data     2.662 | LO     2.477 LO+1/m     2.506 | v2     2.393 +-    0.536 pull +0.40 | eps0    0.8479 pull +4.47
+  Y3S->chib0(1P)           fit  data   0.05486 | LO 0.0005106 LO+1/m 0.0004693 | v2   0.02807 +-    0.406 pull +0.07 | eps0   0.01211 pull +4.48
+  Y3S->chib1(1P)           fit  data   0.01829 | LO 0.0006472 LO+1/m 0.0006274 | v2   0.06752 +-     1.05 pull -0.05 | eps0   0.03336 pull -1.46
+  Y3S->chib2(1P)           fit  data    0.2032 | LO  0.000584 LO+1/m 0.0006191 | v2    0.1042 +-     1.68 pull +0.06 | eps0   0.05554 pull +5.37
+  chib0(2P): Y1S/Y2S       fit  data    0.2754 | LO    0.4863 LO+1/m     0.531 | v2    0.7489 +-    0.591 pull -0.78 | eps0    0.6774 pull -2.94
+  chib1(2P): Y1S/Y2S       fit  data     0.547 | LO    0.3916 LO+1/m    0.4059 | v2    0.5718 +-     0.45 pull -0.05 | eps0    0.5174 pull +0.37
+  chib2(2P): Y1S/Y2S       fit  data    0.7416 | LO    0.3502 LO+1/m    0.3247 | v2    0.4571 +-    0.359 pull +0.74 | eps0    0.4137 pull +2.44
+  hb(2P): etab1S/etab2S    fit  data    0.4583 | LO    0.3556 LO+1/m    0.3487 | v2    0.4897 +-    0.381 pull -0.08 | eps0    0.4435 pull +0.09
+== 3. J dependence of the multiplets (reduced widths relative to the reference J)
+  psi2S->chicJ             J=0 (ref 2) E= 260.7 MeV | exp 0.613 +- 0.022 | LO(NL) 0.981  LO+1/m 0.798  fit 0.798
+  psi2S->chicJ             J=1 (ref 2) E= 171.3 MeV | exp 0.706 +- 0.025 | LO(NL) 0.995  LO+1/m 0.905  fit 0.905
+  chicJ->Jpsi              J=0 (ref 2) E= 303.7 MeV | exp 1.285 +- 0.121 | LO(NL) 1.016  LO+1/m 1.461  fit 1.461
+  chicJ->Jpsi              J=1 (ref 2) E= 389.4 MeV | exp 1.013 +- 0.088 | LO(NL) 1.006  LO+1/m 1.339  fit 1.339
+  Y2S->chibJ(1P)           J=0 (ref 2) E= 162.6 MeV | exp 0.835 +- 0.097 | LO(NL) 0.998  LO+1/m 0.956  fit 0.956
+  Y2S->chibJ(1P)           J=1 (ref 2) E= 129.8 MeV | exp 0.995 +- 0.075 | LO(NL) 0.999  LO+1/m 0.976  fit 0.976
+  Y3S->chibJ(2P)           J=0 (ref 2) E= 121.9 MeV | exp 0.794 +- 0.126 | LO(NL) 0.998  LO+1/m 0.966  fit 0.966
+  Y3S->chibJ(2P)           J=1 (ref 2) E=  99.2 MeV | exp 1.049 +- 0.162 | LO(NL) 0.999  LO+1/m 0.981  fit 0.981
+  Y3S->chibJ(1P)           J=0 (ref 2) E= 483.8 MeV | exp 0.971 +- 0.173 | LO(NL) 3.143  LO+1/m 2.725  fit 0.968
+  Y3S->chibJ(1P)           J=1 (ref 2) E= 452.0 MeV | exp 0.132 +- 0.075 | LO(NL) 1.629  LO+1/m 1.489  fit 0.952
+  psi3770->chicJ           J=0 (ref 1) E= 341.2 MeV | exp 0.881 +- 0.110 | LO(NL) 0.985  LO+1/m 0.966  fit 0.966
+  psi3770->chicJ           J=2 (ref 1) E= 211.3 MeV | exp 6.690 +- nan | LO(NL) 1.007  LO+1/m 1.017  fit 1.017
+  chibJ(2P): Y1S/Y2S       J=0 (ref 2) E= 743.0 MeV | exp 0.264 +- 0.140 | LO(NL) 0.987  LO+1/m 1.163  fit 1.165
+  chibJ(2P): Y1S/Y2S       J=1 (ref 2) E= 764.2 MeV | exp 0.657 +- 0.153 | LO(NL) 0.995  LO+1/m 1.113  fit 1.113
+  psi2(3823): chicJ/chic1  J=2 (ref 1) E= 258.0 MeV | exp 1.321 +- 0.590 | LO(NL) 1.007  LO+1/m 1.017  fit 1.017
+== 4. lattice QCD E1 widths versus LO and the reference fit
+  chic0->Jpsi        HSC   lat  208.6(0.3) | LO L  203.2 NL  200.1 LO+1/m  235.3 | fit  236.9 +-  7.4 (fit/lat 1.136) | RPP 167.4
+  chic1->Jpsi        ETMC  lat  327.0(10) | LO L  428.2 NL  417.3 LO+1/m  454.3 | fit  457.3 +- 14.4 (fit/lat 1.399) | RPP 278.0
+  chic2->Jpsi        CLQCD lat  368.0(5) | LO L  575.0 NL  557.3 LO+1/m  455.7 | fit  458.8 +- 14.4 (fit/lat 1.247) | RPP 368.6
+  psi2(3823)->chic1  CLQCD lat  337.0(27) | LO L  385.9 NL  376.1 LO+1/m  351.4 | fit  348.8 +- 10.0 (fit/lat 1.035) | RPP nan
+  lattice chi_cJ -> gamma J/psi, reduced widths relative to J = 2: {'0/2': 1.6039536249031803, '1/2': 1.1934125819361383}
+done
