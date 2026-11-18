@@ -1,5 +1,0 @@
-transition,variant,k_MeV,path_H_to_Q,path_Q_to_H,coherent,coherent_Pi,coherent_Sigma,coherent_int
-psi(2S)->gamma eta_c(1S),NL,635.159,2.52562,2.19462,9.42885,0.214107,12.4846,-3.2699
-psi(2S)->gamma eta_c(1S),L,635.159,2.52096,2.27083,9.57705,0.188816,12.4553,-3.06709
-J/psi->gamma eta_c(1S),NL,110.755,0.0333358,0.0283854,0.123244,0.0395869,0.302528,-0.218871
-J/psi->gamma eta_c(1S),L,110.755,0.0333269,0.0283749,0.123205,0.0396276,0.302579,-0.219002
