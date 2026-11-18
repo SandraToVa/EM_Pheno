@@ -1,4 +1,21 @@
-# EM_Pheno_v10: quarkonium E1 and hybrid-to-quarkonium transitions
+# EM_Pheno_v11: quarkonium E1 and hybrid-to-quarkonium transitions
+
+## Changes with respect to v10 (quarkonium only; the hybrid code is unchanged and was not rerun)
+
+* Theory error `sigma_th = 2 eps Gamma` (model width), Eq. (eq:sigma_th); the eps^4 term of the variance and the
+  no-cancellation width Gamma_bar are dropped (`e1.theory_sigma(G, eps)`). Ratios: `2 sqrt(2) eps R`.
+* Errors of `A_b`, `kappa_b`: fits to Gamma_exp,max = d + sigma_exp and Gamma_exp,min = d - sigma_exp (all measured
+  widths and ratios moved together; err_up/err_dn where asymmetric; same covariance, theory error and upper limits),
+  Eq. (eq:exp_range). The interval is the range spanned by the central and the two shifted fits; predicted widths get
+  the range over the same three fits (`Fit.exp_shifted`, `Fit.run`, `Fit.prediction_range`). No Delta chi^2 = 1
+  errors, no Hessian, no rho.
+* Hindered Upsilon(3S) -> gamma chi_bJ(1P) moved from core to ext and never fitted (core: 7 charm + 10 bottom).
+* Reference fit (NL, core, eps = v^2): `A_b = -0.059 +0.067 -0.067 GeV`, `kappa_b = +0.046 +0.026 -0.025`,
+  chi^2 = 8.8/15. Max fit: (-0.126, +0.072); min fit: (+0.008, +0.021).
+* `summary.json` `ref_v2.errors_b` now holds these errors. `run_hybrids.py` reads it (kappa_c +-1 sigma check of
+  Table tab:H_fit) and `kappa_c`: if it is rerun, the hybrid results change. The hybrid tables in the TeX folder are
+  still those of v10.
+* tests/test_e1.py: 142 checks (theory error, data sets, shifted fits).
 
 Code of Sec. 5 (phenomenology) of the *EM Transitions Notes*. The quarkonium part is that of v9, unchanged (same
 numbers); v10 adds the hybrid part on top of it.

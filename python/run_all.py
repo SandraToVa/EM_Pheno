@@ -1,4 +1,4 @@
-"""Quarkonium E1 phenomenology (EM_Pheno v9): fits of g_E1(r) = e r [e_Q + (A_Q r + kappa_Q x)/(1 + x)],
+"""Quarkonium E1 phenomenology (EM_Pheno v11): fits of g_E1(r) = e r [e_Q + (A_Q r + kappa_Q x)/(1 + x)],
 x = (r/r0)^2, r0 = 1.58 GeV^-1, with the 1/m corrections, flavour independent (A_c = -A_b/2,
 kappa_c = -kappa_b/2), theory error eps = v^2 (0.3 charm, 0.1 bottom) or eps = 0.
 
@@ -6,8 +6,8 @@ kappa_c = -kappa_b/2), theory error eps = v^2 (0.3 charm, 0.1 bottom) or eps = 0
 
 Writes to ../results:
   fits.csv      one row per (form L/NL, data set core/core+ext): chi^2 at LO and at LO + 1/m (no parameters),
-                and the fits at eps = v^2 and eps = 0 (A_b, kappa_b, Delta chi^2 = 1 errors, correlation,
-                chi^2 = chi^2_c + chi^2_b)                                                -> Table tab:gE1_fit
+                and the fits at eps = v^2 and eps = 0 (A_b, kappa_b with the errors from the fits to
+                Gamma_exp,max and Gamma_exp,min, chi^2 = chi^2_c + chi^2_b)                                                -> Table tab:gE1_fit
   widths.csv    every observable at the reference fit (NL, core): LO, delta_1m, LO + 1/m, the fit at
                 eps = v^2 (with theory error, propagated fit error and pull) and at eps = 0  -> Table tab:E1_widths
   j_ratios.csv  J dependence of the multiplets: reduced widths Gamma_J/(S_J E_J^3) relative to a reference J
@@ -59,15 +59,17 @@ for nonloc in (False, True):
             (dAl, dAh), (dkl, dkh) = R['errors']
             out.update({f'A_b_{et}': R['p'][0], f'A_b_lo_{et}': dAl, f'A_b_hi_{et}': dAh,
                         f'kappa_b_{et}': R['p'][1], f'kappa_b_lo_{et}': dkl, f'kappa_b_hi_{et}': dkh,
-                        f'rho_{et}': R['rho'], f'chi2_{et}': R['chi2'],
+                        f'A_b_max_{et}': R['p_max'][0], f'kappa_b_max_{et}': R['p_max'][1], f'chi2_max_{et}': R['chi2_max'],
+                        f'A_b_min_{et}': R['p_min'][0], f'kappa_b_min_{et}': R['p_min'][1], f'chi2_min_{et}': R['chi2_min'],
+                        f'chi2_{et}': R['chi2'],
                         f'chi2_c_{et}': R['chi2_parts']['c'], f'chi2_b_{et}': R['chi2_parts']['b']})
             FITS[(nonloc, dset, et)] = (F, R)
         fits.append(out)
         print(f"  {out['form']:2s} {dset:9s} N={out['N_meas']}+{out['N_UL']} | eps=v2: chi2 LO {out['chi2_LO_v2']:.1f}, "
               f"LO+1/m {out['chi2_LO1m_v2']:.1f}, fit A_b={out['A_b_v2']:+.4f} kappa_b={out['kappa_b_v2']:+.4f} "
-              f"rho={out['rho_v2']:+.2f} chi2 {out['chi2_v2']:.1f}/{F.ndf} ({out['chi2_c_v2']:.1f}+{out['chi2_b_v2']:.1f}) | "
+              f"[max {out['A_b_max_v2']:+.4f},{out['kappa_b_max_v2']:+.4f}; min {out['A_b_min_v2']:+.4f},{out['kappa_b_min_v2']:+.4f}] chi2 {out['chi2_v2']:.1f}/{F.ndf} ({out['chi2_c_v2']:.1f}+{out['chi2_b_v2']:.1f}) | "
               f"eps=0: chi2 LO {out['chi2_LO_eps0']:.0f}, LO+1/m {out['chi2_LO1m_eps0']:.0f}, fit A_b={out['A_b_eps0']:+.4f} "
-              f"kappa_b={out['kappa_b_eps0']:+.4f} chi2 {out['chi2_eps0']:.1f}/{F.ndf} "
+              f"kappa_b={out['kappa_b_eps0']:+.4f} [max {out['A_b_max_eps0']:+.4f},{out['kappa_b_max_eps0']:+.4f}; min {out['A_b_min_eps0']:+.4f},{out['kappa_b_min_eps0']:+.4f}] chi2 {out['chi2_eps0']:.1f}/{F.ndf} "
               f"({out['chi2_c_eps0']:.1f}+{out['chi2_b_eps0']:.1f})")
 write_csv('fits.csv', fits)
 
@@ -77,7 +79,8 @@ pV, p0 = RV['p'], R0F['p']
 for et, R in (('v2', RV), ('eps0', R0F)):
     Ac, kc = flavour_params(R['p'], 'c')
     summary[f'ref_{et}'] = {'A_b': R['p'][0], 'kappa_b': R['p'][1], 'A_c': Ac, 'kappa_c': kc, 'errors_b': R['errors'],
-                            'rho': R['rho'], 'chi2': R['chi2'], 'ndf': F.ndf, 'chi2_c': R['chi2_parts']['c'],
+                            'p_max_b': R['p_max'], 'p_min_b': R['p_min'], 'chi2_max': R['chi2_max'],
+                            'chi2_min': R['chi2_min'], 'chi2': R['chi2'], 'ndf': F.ndf, 'chi2_c': R['chi2_parts']['c'],
                             'chi2_b': R['chi2_parts']['b']}
 # g_E1(r)/(e e_Q r) of the reference fit at a few distances
 summary['gE1_over_LO'] = {fl: {f'{r:g}': float(g_E1(r, fl, *flavour_params(pV, fl)) / g_E1(r, fl, 0.0, 0.0))
@@ -94,7 +97,7 @@ for k, (row, o) in enumerate(zip(DATA, F.obs)):
          'data': row['value'], 'err_exp': pul_v[k][3], 'err_up': row.get('err_up', np.nan), 'err_dn': row.get('err_dn', np.nan),
          'LO_L': FL.obs[k].predict(ZERO, 0.0, corr=False)[0], 'LO': o.predict(ZERO, 0.0, corr=False)[0], 'delta_1m': d,
          'LO1m': o.predict(ZERO, 0.0)[0],
-         'fit_v2': pul_v[k][0], 'sth_v2': pul_v[k][1], 'dfit_v2': Fit.prediction_error(o, pV, RV['cov']), 'pull_v2': pul_v[k][2],
+         'fit_v2': pul_v[k][0], 'sth_v2': pul_v[k][1], 'dfit_lo_v2': Fit.prediction_range(o, RV)[0], 'dfit_hi_v2': Fit.prediction_range(o, RV)[1], 'pull_v2': pul_v[k][2],
          'fit_eps0': pul_0[k][0], 'pull_eps0': pul_0[k][2]}
     widths.append(w)
     print(f"  {row['id']:24s} {'fit ' if F.fitted[k] else 'pred'} data {row['value']:9.4g} | LO {w['LO']:9.4g} LO+1/m {w['LO1m']:9.4g} "
@@ -192,11 +195,12 @@ for qid, ini, fin, G, dG, src in QLAT:
     out = {'id': qid, 'source': src, 'lat': G, 'dlat': dG,
            'data': DATA[k]['value'] if k is not None else np.nan, 'ddata': widths[k]['err_exp'] if k is not None else np.nan,
            'LO_L': oL.predict(ZERO, 0.0, corr=False)[0], 'LO_NL': oN.predict(ZERO, 0.0, corr=False)[0],
-           'LO1m_NL': oN.predict(ZERO, 0.0)[0], 'fit': oN.predict(pV, 0.0)[0], 'dfit': Fit.prediction_error(oN, pV, RV['cov'])}
+           'LO1m_NL': oN.predict(ZERO, 0.0)[0], 'fit': oN.predict(pV, 0.0)[0]}
+    out['dfit_lo'], out['dfit_hi'] = Fit.prediction_range(oN, RV)
     out['fit_over_lat'] = out['fit'] / G
     lat.append(out)
     print(f"  {qid:18s} {src:5s} lat {G:6.1f}({dG:g}) | LO L {out['LO_L']:6.1f} NL {out['LO_NL']:6.1f} LO+1/m {out['LO1m_NL']:6.1f} "
-          f"| fit {out['fit']:6.1f} +- {out['dfit']:4.1f} (fit/lat {out['fit_over_lat']:.3f}) | RPP {out['data']:.1f}")
+          f"| fit {out['fit']:6.1f} +{out['dfit_hi']:4.1f} -{out['dfit_lo']:4.1f} (fit/lat {out['fit_over_lat']:.3f}) | RPP {out['data']:.1f}")
 write_csv('lattice.csv', lat)
 summary['chic0_lattice_masses_keV'] = 247.4
 # J dependence of the lattice chi_cJ -> gamma J/psi widths (three different lattice set-ups), as in j_ratios.csv

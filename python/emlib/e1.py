@@ -70,7 +70,7 @@ def _orbital_profiles(lf, li):
 
 def amplitudes(final, initial, E, weight, r, nonloc, absval=False):
     """M[(Mf, Mi, h)] for g_E1(r) = weight(r) (array on the mesh). absval: |u_f u_i| instead of u_f u_i
-    (no-cancellation amplitude of the theory error)."""
+    (no-cancellation amplitude, used for the theory error up to v10; not used since v11)."""
     g = _GRID
     cc = final.c * initial.c
     if absval:
@@ -119,7 +119,9 @@ def delta_1m(initial, final, E):
     return E / (8.0 * M_QUARK[initial.flavor]) * (sp - dl / 3.0)
 
 
-def theory_sigma(G, Gabs, eps):
-    """theory error of a width G whose amplitude has an absolute error eps * A_abs (A_abs: |u_f u_i| in the
-    radial integral, Gabs its width), Eq. (eq:sigma_th): sigma^2 = 4 eps^2 G Gabs + 2 eps^4 Gabs^2"""
-    return np.sqrt(max(4.0 * eps ** 2 * G * Gabs + 2.0 * eps ** 4 * Gabs ** 2, 0.0))
+def theory_sigma(G, eps):
+    """theory error of a width G, Eq. (eq:sigma_th) (v11): the amplitude has a relative error eps (standard
+    deviation of delta in A -> A (1 + delta)); the variance of Gamma (1 + delta)^2 is 4 eps^2 Gamma^2 + 2 eps^4 Gamma^2.
+    The eps^4 term changes sigma_th by a factor (1 + eps^2/2)^(1/2), i.e. by 2.2% for eps = 0.3 and 0.25% for
+    eps = 0.1, and is dropped: sigma_th = 2 eps Gamma, with Gamma the model width."""
+    return 2.0 * eps * abs(G)

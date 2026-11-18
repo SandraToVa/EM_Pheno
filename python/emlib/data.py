@@ -7,7 +7,8 @@ Masses in GeV, widths in keV. Every entry of DATA is one observable:
   init, final (, final2): state labels (STATES)
   err    error not shared with other observables; err_corr: error from the total width of init,
          common to the observables of the same group (correlated); err_up, err_dn: asymmetric errors
-  set    'core' (states below the open-flavour threshold) or 'ext' (psi(3770), psi_2(3823): D waves)
+  set    'core' (states below the open-flavour threshold, without hindered transitions) or 'ext' (psi(3770),
+         psi_2(3823): D waves; hindered Upsilon(3S) -> gamma chi_bJ(1P): never fitted, v11)
   flavor 'c' or 'b'
 """
 import numpy as np
@@ -91,7 +92,7 @@ for J, (br, dbr) in zip((0, 1, 2), [(0.059, 0.006), (0.126, 0.012), (0.131, 0.01
 for J, (br, dbr) in zip((0, 1, 2), [(2.7e-3, 0.4e-3), (9e-4, 5e-4), (10.0e-3, 1.0e-3)]):
     v, e1, e2 = _w('Y3S', br, dbr)
     _add(id=f'Y3S->chib{J}(1P)', kind='width', init='Y3S', final=f'chib{J}', value=v, err=e1,
-         err_corr=e2, group='Y3S', set='core', flavor='b')
+         err_corr=e2, group='Y3S', set='ext', flavor='b')
 # ratios from branching fractions (independent errors)
 for J, (a, da, b, db) in zip((0, 1, 2), [(0.38e-2, 0.17e-2, 1.38e-2, 0.30e-2),
                                          (9.9e-2, 1.0e-2, 18.1e-2, 1.9e-2),

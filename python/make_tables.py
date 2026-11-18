@@ -2,7 +2,7 @@
 
     python3 make_tables.py        (from python/)
 
-Written next to sec_pheno.tex (<EM transitions>/TeX file/tex_pheno, or $EMPHENO_TEX, or EM_Pheno_v9/tex):
+Written next to sec_pheno.tex (<EM transitions>/TeX file/tex_pheno, or $EMPHENO_TEX, or EM_Pheno_v11/tex):
   tab_gE1_fit.tex            Table tab:gE1_fit             fits of (A_b, kappa_b)                      (fits.csv)
   tab_E1_widths.tex          Table tab:E1_widths           widths at the reference fit                 (widths.csv)
   tab_J_ratios.tex           Table tab:J_ratios            J dependence of the multiplets              (j_ratios.csv)
@@ -85,7 +85,7 @@ for set_ in ('core', 'core+ext'):
         rows.append(f"{set_} & {'non-local' if r['form'] == 'NL' else 'local'} & {nm}+{int(r['N_UL'])} & "
                     f"{r['chi2_LO_v2']:.1f}/{nm} & {r['chi2_LO1m_v2']:.1f}/{nm} & "
                     f"{perr(r['A_b_v2'], r['A_b_lo_v2'], r['A_b_hi_v2'])} & {perr(r['kappa_b_v2'], r['kappa_b_lo_v2'], r['kappa_b_hi_v2'])} & "
-                    f"${r['rho_v2']:+.2f}$ & {r['chi2_v2']:.1f}/{nd} ({r['chi2_c_v2']:.1f}+{r['chi2_b_v2']:.1f}) & "
+                    f"{r['chi2_v2']:.1f}/{nd} ({r['chi2_c_v2']:.1f}+{r['chi2_b_v2']:.1f}) & "
                     f"{r['chi2_LO_eps0']:.0f}/{nm} & {r['chi2_LO1m_eps0']:.0f}/{nm} & "
                     f"{perr(r['A_b_eps0'], r['A_b_lo_eps0'], r['A_b_hi_eps0'])} & {perr(r['kappa_b_eps0'], r['kappa_b_lo_eps0'], r['kappa_b_hi_eps0'])} & "
                     f"{r['chi2_eps0']:.0f}/{nd} ({r['chi2_c_eps0']:.0f}+{r['chi2_b_eps0']:.0f}) \\\\")
@@ -143,7 +143,7 @@ ref = summ['ref_v2']
 write('tab_lattice_chic0.tex', [
     f"LO, local & {c0['LO_L']:.0f} \\\\",
     f"LO, non-local & {c0['LO_NL']:.0f} \\\\",
-    f"fit, non-local, $g_{{E1}}(r)$ of Eq.~\\eqref{{eq:gE1_interp}} $+\\,1/m$, $\\epsilon=v^2$ & {c0['fit']:.0f}$\\pm${c0['dfit']:.0f} \\\\",
+    f"fit, non-local, $g_{{E1}}(r)$ of Eq.~\\eqref{{eq:gE1_interp}} $+\\,1/m$, $\\epsilon=v^2$ & ${c0['fit']:.0f}^{{+{c0['dfit_hi']:.0f}}}_{{-{c0['dfit_lo']:.0f}}}$ \\\\",
     r"\hline",
     f"lattice~\\cite{{Delaney:2023fsc}}, experimental masses & {c0['lat']:.1f}(3) \\\\",
     f"lattice~\\cite{{Delaney:2023fsc}}, lattice masses & {summ['chic0_lattice_masses_keV']:.1f}(2) \\\\",
@@ -156,5 +156,5 @@ for r in L.values():
     dat = '--' if not np.isfinite(r['data']) else f"{r['data']:.0f}$\\pm${r['ddata']:.0f}"
     d = 1 if r['dlat'] < 1 else 0
     rows.append(f"{qtex[r['id']]} & {qsrc[r['source']]} & {r['lat']:.{d}f}({r['dlat'] * 10 ** d:.0f}) & {r['LO_L']:.0f} & {r['LO_NL']:.0f} & "
-                f"{r['fit']:.0f}$\\pm${r['dfit']:.0f} & {r['fit_over_lat']:.2f} & {dat} \\\\")
+                f"${r['fit']:.0f}^{{+{r['dfit_hi']:.0f}}}_{{-{r['dfit_lo']:.0f}}}$ & {r['fit_over_lat']:.2f} & {dat} \\\\")
 write('tab_quarkonium_lattice.tex', rows + [r'\hline'])

@@ -1,4 +1,4 @@
-"""Consistency tests of the E1 code (EM_Pheno v9), run from the tests/ folder:  python3 test_e1.py
+"""Consistency tests of the E1 code (EM_Pheno v11), run from the tests/ folder:  python3 test_e1.py
   1  Clebsch-Gordan and 6j coefficients (against sympy)
   2  LO local widths of every transition of the data set against the closed formula
      Gamma = (4/3) alpha e_Q^2 E^3 S_if |int dr u_f r u_i|^2, S_if = (2Jf+1) max(li,lf) {Ji Jf 1; lf li S}^2
@@ -8,7 +8,10 @@
   6  1/m correction delta_1m: spin term only for spin-triplet S <-> P, Delta l term
   7  flavour-independent parameters: A_c = -A_b/2, kappa_c = -kappa_b/2
   8  J dependence: at LO (local) the reduced width Gamma/(S_if E^3) is the same for all J of a multiplet
-  9  theory error: eps = 0 gives 0; without cancellations (Ga = G) sigma ~ 2 eps G
+  9  theory error sigma_th = 2 eps Gamma (v11), also for ratios (2 sqrt(2) eps R)
+ 10  data sets: the hindered Upsilon(3S) -> gamma chi_bJ(1P) are not fitted (set ext, never in the fit sets)
+ 11  error method (v11): the shifted data are d +- sigma_exp (err_up/err_dn, total-width error included),
+     upper limits unchanged; a fit to unshifted data reproduces the central chi^2; the max/min fits are minima
 """
 import os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'python'))
@@ -22,7 +25,7 @@ from emlib.states import Library
 from emlib.data import DATA, STATES
 from emlib.e1 import (ALPHA_EM, E_CHARGE, CHARGE, GEV2KEV, M_QUARK, photon_energy, amplitudes, width_form, g_E1,
                       delta_1m, theory_sigma)
-from emlib.fit import build_state, flavour_params, Observable
+from emlib.fit import build_state, flavour_params, Observable, Fit, EPS_V2
 
 ok = True
 
@@ -135,9 +138,42 @@ for Ji in (0, 1, 2):
     o = Observable({'flavor': 'c', 'kind': 'width', 'init': f'chic{Ji}', 'final': 'Jpsi'}, libs, False)
     check(f"P -> S spin factor 1/3 for J={Ji}", spin_factor(1, 1, Ji, 0, 1), 1.0 / 3.0, 1e-12)
 
-# 9. theory error
-check("theory error at eps = 0", theory_sigma(10.0, 12.0, 0.0), 0.0, 1e-15)
-check("theory error without cancellations ~ 2 eps G", theory_sigma(10.0, 10.0, 1e-3), 2e-3 * 10.0, 1e-5)
+# 9. theory error (v11): sigma_th = 2 eps Gamma
+check("theory error at eps = 0", theory_sigma(10.0, 0.0), 0.0, 1e-15)
+check("theory error = 2 eps Gamma", theory_sigma(10.0, 0.3), 6.0, 1e-15)
+o = Observable([x for x in DATA if x['id'] == 'chib1(2P): Y1S/Y2S'][0], libs, True)
+R, sR = o.predict((0.0, 0.0), 0.1)
+check("ratio theory error = 2 sqrt(2) eps R", sR, 2 * np.sqrt(2) * 0.1 * R, 1e-12)
+o = Observable([x for x in DATA if x['id'] == 'psi2S->chic1'][0], libs, True)
+G, sG = o.predict((0.01, -0.02), {'c': 0.3, 'b': 0.1})
+check("width theory error with eps_c", sG, 0.6 * G, 1e-12)
+
+# 10. data sets
+for J in (0, 1, 2):
+    row = [x for x in DATA if x['id'] == f'Y3S->chib{J}(1P)'][0]
+    check(f"Y3S -> chib{J}(1P) in set ext (not fitted)", float(row['set'] == 'ext'), 1.0, 1e-15)
+F = Fit(DATA, libs, True, {'c': ('core',), 'b': ('core',)})
+check("core: 7 charm + 10 bottom measurements", len(F.meas), 17, 1e-15)
+check("core: no hindered transition fitted", float(any('(1P)' in DATA[k]['id'] and DATA[k]['init'] == 'Y3S' for k in F.meas)), 0.0, 1e-15)
+
+# 11. error method
+p0, c0 = F.minimize(EPS_V2)
+check("chi2 with the data vector = chi2 of the rows", F.chi2(p0, EPS_V2), c0, 1e-12)
+for sign in (+1, -1):
+    Fs = F.exp_shifted(sign)
+    for k in F.meas:
+        row = DATA[k]
+        e = (row['err_up'] if sign > 0 else row['err_dn']) if 'err_up' in row else np.hypot(row['err'], row.get('err_corr', 0.0))
+        check(f"shift {'+' if sign > 0 else '-'} {row['id']}", Fs.data[k], row['value'] + sign * e, 1e-12)
+    Fe = Fit(DATA, libs, True, {'c': ('core', 'ext'), 'b': ('core',)}).exp_shifted(sign)
+    for k in Fe.uls:
+        check(f"upper limit unchanged {DATA[k]['id']}", Fe.data[k], DATA[k]['value'], 1e-15)
+    check("original data unchanged by the shifted copy", F.data[F.meas[0]], DATA[F.meas[0]]['value'], 1e-15)
+    ps, cs = Fs.minimize(EPS_V2)
+    for i in (0, 1):
+        for h in (1e-3, -1e-3):
+            q = np.array(ps); q[i] += h
+            check(f"shifted fit ({sign:+d}) is a minimum in parameter {i}, step {h:+g}", float(Fs.chi2(q, EPS_V2) >= cs), 1.0, 1e-15)
 
 print('ALL PASS' if ok else 'SOME TESTS FAILED')
 sys.exit(0 if ok else 1)
