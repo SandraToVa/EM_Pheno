@@ -1,54 +1,79 @@
-"""Hybrid -> quarkonium + photon: the 1+- vertex of Eq. (eq:lab_vertex) with the r-dependent string coupling of
-Eq. (eq:kappaH) of the notes,
+"""Hybrid -> quarkonium + photon: the 1+- vertex of Eq. (eq:lab_vertex) with interpolated LEFs, Eq. (eq:gH_interp)
+of the notes (v12).
 
-    c_1(r) = c_2(r) = c_3(r) = c_4(r) = e kappa_H(r),     kappa_H(r) = (B_Q r + kappa_Q x)/(1 + x),
+Each LEF g_X(r) of Table tab:HQ_lef interpolates between a short-distance behaviour and its EST (long-string) shape,
+with the long-distance coupling identified with the quarkonium kappa_Q (c_i -> e kappa_Q), as in Eq. (eq:gE1_interp):
+
+    magnetic, O(p^2):  g_X(r) = e [ B_Q r + kappa_Q ghat_X(r) x ] / (1 + x),      X = B_perp, B_par
+    electric, O(p^3):  g_X(r) = e  kappa_Q ghat_X(r) x / (1 + x),                X = E_par, E_perp, E^Sigma
     x = (r/r0)^n,  n = 2,  r0 = sqrt(pi/(6 sigma))  (the same n, r0 as g_E1),
 
-with kappa_Q the long-distance charge correction of the quarkonium fit (Eq. (eq:gE1_interp)) and B_Q (GeV) the
-short-distance slope of the hybrid vertex, B_c = (e_b/e_c) B_b = -B_b/2 (Eq. (eq:flavour_link_H)).
+with the EST shapes per unit coupling (Table tab:HQ_lef, c_i = 1)
+    ghat_B_perp = 2/sqrt(pi sigma),          ghat_B_par = -4/(sigma r),
+    ghat_E_par  = -2 r/(pi sqrt(pi sigma)),  ghat_E_perp = +2 r/(pi sqrt(pi sigma)),  ghat_E^Sigma = 4/(3 pi sigma).
+At short distance g_B_perp -> e B_Q r. Since ghat_B_par x = -4 r/(sigma r0^2) is itself O(r), g_B_par ->
+e (B_Q - 4 kappa_Q/(sigma r0^2)) r = e (B_Q - (24/pi) kappa_Q) r: the two magnetic LEFs are equal at r -> 0 only for
+kappa_Q = 0 (see the notes). The electric LEFs (dimension -2) have no B_Q term and vanish like kappa_Q r^2 ghat_X. B_Q is dimensionless
+(e B_Q r has the dimension -1 of g_B), with B_c = (e_b/e_c) B_b = -B_b/2 (Eq. (eq:flavour_link_H)).
 
-Vertex (photon along +z, helicity h), with the EST LEFs of Table tab:HQ_lef and the phase convention
-|H^0> <-> -i|Sigma_u^->:
+Vertex (photon along +z, helicity h), phase convention |H^0> <-> -i|Sigma_u^->:
     V_h = E { h G1^Pi eps*_perp + h G1^Sigma rhat (rhat.eps*) - i G2 rhat x (Q_h rhat) },
-    G1^Pi    = g_B_perp + (E/2)(g_E_par - g_E_perp),   g_B_perp = 2 c2/sqrt(pi sigma),
-               g_E_par = -2 c3 r/(pi sqrt(pi sigma)),   g_E_perp = 2 c1 r/(pi sqrt(pi sigma)),
-    G1^Sigma = g_B_par + E g_E^Sigma,                  g_B_par = -4 c4/(sigma r),  g_E^Sigma = 4 c3/(3 pi sigma),
-    G2       = (E/2)(g_E_par + g_E_perp)               (= 0 for c1 = c3).
-The transverse terms ('Pi' channel) only see psi - rhat(rhat.psi), the longitudinal ones ('Sigma' channel) only
-rhat.psi. Non-local form (NL): every density rho_X(z, r) of Table tab:HQ_lef is evaluated at R + z rhat, which
-multiplies it by its Fourier transform in q_z = E cos theta (Q = q_z r):
-    cos(pi z/r)  -> f  = pi^2 cos(Q/2)/(pi^2 - Q^2),   cos(3 pi z/r) -> F3 = 9 pi^2 cos(Q/2)/(9 pi^2 - Q^2)
-(normalized to their integrals), so that FT[rho_B_par] = g_B_par f - (c2/(2 sigma r))(f - F3) and
-FT[rho_E^Sigma] = g_E^Sigma (9 f - F3)/8; the c2 part of rho_B_par integrates to zero (Eq. (eq:rhoSigma)).
+    G1^Pi = g_B_perp + (E/2)(g_E_par - g_E_perp),  G1^Sigma = g_B_par + E g_E^Sigma,  G2 = (E/2)(g_E_par + g_E_perp)
+(G2 = 0 here, since ghat_E_par = -ghat_E_perp). Only the LOCAL form is implemented in v12: the non-local form needs
+an interpolation of the densities rho_X(z, r), which is not defined yet (nonloc=True raises NotImplementedError).
 
-The angular integrals are done numerically on the sphere (no transition-specific algebra), the radial ones as Gauss
-quadratures on the mesh; the heavy-quark spin is a spectator,
+The angular integrals are done numerically on the sphere, the radial ones as Gauss quadratures on the mesh; the
+heavy-quark spin is a spectator,
     M(Mf, Mi, h) = sum_s C(lf S Jf; Mf-s, s) C(J S Jcal; Mi-s, s) M_orb(Mf-s, Mi-s, h).
 Width (sum over Mf, h, average over Mi), Eq. (eq:Gamma_hyb_ps):  Gamma = E/(2 pi) 1/(2 Jcal + 1) sum |M|^2.
 M = M_Pi + M_Sigma, so Gamma = Gamma_PiPi + Gamma_SigmaSigma + Gamma_int exactly (Eq. (eq:Gamma_split)).
-
-Since the vertex is linear in kappa_H, M = B_Q M_B + kappa_Q M_kappa (radial weights f_B = r/(1+x),
-f_kappa = x/(1+x)), and every width is a quadratic form in v = (B_Q, kappa_Q):
-    Gamma_XY = v^T H_XY v,   X, Y in {Pi, Sigma}.
+Every LEF is linear in (B_Q, kappa_Q), so every width is a quadratic form, Gamma_XY = v^T H_XY v, v = (B_Q, kappa_Q).
 """
 import numpy as np
 from .angular import AngularGrid, cg, eps_star
 from .e1 import E_CHARGE, CHARGE, SIGMA, GEV2KEV, interp_x, photon_energy
 
 CHANNELS = ('Pi', 'Sigma')
+LEFS = ('B_perp', 'E_par', 'E_perp', 'B_par', 'E_Sigma')
+MAGNETIC = ('B_perp', 'B_par')
 _GRID = AngularGrid(48, 64)
 
+# vertex terms: (LEF, channel, angular structure, power p of E, sign s): term = s E^p g_X(r) x structure
+TERMS = [('B_perp',  'Pi',    'perp', 1, +1),    #   E h g_B_perp eps*_perp . psi
+         ('E_par',   'Pi',    'Ta',   2, -1),    # -i E^2 g_E_par T_a,  'Ta' = i (q.rhat)(rhat x eps*) . psi
+         ('E_perp',  'Pi',    'Tb',   2, +1),    # -i E^2 g_E_perp T_b, 'Tb' = -i (rhat.eps*)(rhat x q) . psi
+         ('B_par',   'Sigma', 'long', 1, +1),    #   E h g_B_par (rhat.eps*)(rhat.psi)
+         ('E_Sigma', 'Sigma', 'long', 2, +1)]    #   E^2 h g_E^Sigma (rhat.eps*)(rhat.psi)
 
-def kappa_H(r, B, kappa):
-    """kappa_H(r) of Eq. (eq:kappaH): the string coupling c(r) in units of e (B in GeV)"""
+
+def lef_shapes(r, sigma=SIGMA):
+    """EST long-distance shapes ghat_X(r) per unit coupling (Table tab:HQ_lef with c_i = 1), GeV units"""
+    r = np.asarray(r, dtype=float)
+    a = 2.0 / np.sqrt(np.pi * sigma)
+    return {'B_perp': np.full_like(r, a), 'E_par': -a * r / np.pi, 'E_perp': a * r / np.pi,
+            'B_par': -4.0 / (sigma * r), 'E_Sigma': np.full_like(r, 4.0 / (3.0 * np.pi * sigma))}
+
+
+def lef_basis(r, sigma=SIGMA):
+    """({X: f_B,X}, {X: f_kappa,X}): g_X = B_Q f_B,X + kappa_Q f_kappa,X, Eq. (eq:gH_interp), including e"""
+    r = np.asarray(r, dtype=float)
     x = interp_x(r)
-    return (B * np.asarray(r, dtype=float) + kappa * x) / (1.0 + x)
+    gh = lef_shapes(r, sigma)
+    fB = {X: (E_CHARGE * r / (1.0 + x) if X in MAGNETIC else np.zeros_like(r)) for X in LEFS}
+    fk = {X: E_CHARGE * gh[X] * x / (1.0 + x) for X in LEFS}
+    return fB, fk
 
 
-def basis_weights(r):
-    """(f_B, f_kappa): kappa_H = B_Q f_B + kappa_Q f_kappa"""
-    x = interp_x(r)
-    return np.asarray(r, dtype=float) / (1.0 + x), x / (1.0 + x)
+def lefs(r, B, kappa, sigma=SIGMA):
+    """the interpolated LEFs g_X(r) of Eq. (eq:gH_interp) (GeV^-1 for B_perp, B_par; GeV^-2 for the electric ones)"""
+    fB, fk = lef_basis(r, sigma)
+    return {X: B * fB[X] + kappa * fk[X] for X in LEFS}
+
+
+def est_lefs(r, c, sigma=SIGMA):
+    """the pure EST LEFs with a constant coupling c (in units of e): g_X = e c ghat_X (used by the tests)"""
+    gh = lef_shapes(r, sigma)
+    return {X: E_CHARGE * c * gh[X] for X in LEFS}
 
 
 def flavour_B(B_c, fl):
@@ -56,45 +81,7 @@ def flavour_B(B_c, fl):
     return B_c * CHARGE['c'] / CHARGE[fl]
 
 
-# ---------------------------------------------------------------------------------------------- non-local form factors
-def _ff_pole(Q, n):
-    """(n pi)^2 cos(Q/2)/((n pi)^2 - Q^2): FT of cos(n pi z/r) over [-r/2, r/2] divided by its integral
-    (regular at |Q| = n pi, where it is n pi/4 (-1)^((n-1)/2))"""
-    Q = np.asarray(Q, dtype=float)
-    a = (n * np.pi) ** 2
-    near = np.abs(np.abs(Q) - n * np.pi) < 1e-6
-    out = np.empty_like(Q)
-    out[~near] = a * np.cos(Q[~near] / 2.0) / (a - Q[~near] ** 2)
-    out[near] = n * np.pi / 4.0 * (-1) ** ((n - 1) // 2)
-    return out
-
-
-# ------------------------------------------------------------------------------------------------------- the vertex
-# (term, channel, coupling index c1..c4 -> 0..3, angular structure)
-TERMS = [('B',  'Pi',    1, 'perp'),     # g_B_perp      (c2)
-         ('Ea', 'Pi',    2, 'Ta'),       # g_E_par       (c3)
-         ('Eb', 'Pi',    0, 'Tb'),       # g_E_perp      (c1)
-         ('B4', 'Sigma', 3, 'long'),     # g_B_par       (c4)
-         ('B2', 'Sigma', 1, 'long'),     # c2 part of rho_B_par (non-local only)
-         ('E3', 'Sigma', 2, 'long')]     # g_E^Sigma     (c3)
-
-
-def _radial_weights(E, r, nonloc, sigma=SIGMA):
-    """radial weight of each term per unit coupling (the common prefactor 2 E e/sqrt(pi sigma) is applied in
-    radial_integrands) and its non-local form factor on the (r, cos theta) grid (None: absent in the L form)"""
-    sq = np.sqrt(np.pi / sigma)
-    w = {'B': np.ones_like(r), 'Ea': E * r / np.pi, 'Eb': E * r / np.pi,
-         'B4': -2.0 * sq / r, 'B2': -0.25 * sq / r, 'E3': 2.0 * sq / r * E * r / (3.0 * np.pi)}
-    Q = E * np.outer(r, _GRID.costh)
-    if nonloc:
-        f, F3 = _ff_pole(Q, 1), _ff_pole(Q, 3)
-        FF = {'B': f, 'Ea': f, 'Eb': f, 'B4': f, 'B2': f - F3, 'E3': (9.0 * f - F3) / 8.0}
-    else:
-        one = np.ones_like(Q)
-        FF = {'B': one, 'Ea': one, 'Eb': one, 'B4': one, 'B2': None, 'E3': one}
-    return w, FF
-
-
+# ------------------------------------------------------------------------------------------------- angular part
 def _structures(h, vec):
     """angular structures of the vertex contracted with a vector field vec[theta, phi, i]"""
     g = _GRID
@@ -114,7 +101,8 @@ _PROFILE_CACHE = {}
 
 
 def _profiles(lf, l, J):
-    """{(mf, M, h): {term: theta profile}}: phi-integrated Y_lf^mf* (structure . Y^l_{JM})"""
+    """{(mf, M, h): {structure: integral over the sphere}} of Y_lf^mf* (structure . Y^l_{JM}) (local form: the
+    angular integral does not depend on r)"""
     key = (lf, l, J)
     if key not in _PROFILE_CACHE:
         g = _GRID
@@ -125,26 +113,25 @@ def _profiles(lf, l, J):
                 st = _structures(h, vec)
                 for mf in range(-lf, lf + 1):
                     yf = np.conj(g.Y(lf, mf))
-                    out[(mf, M, h)] = {k: np.sum(g.W * yf * st[a], axis=1) for k, _, _, a in TERMS}
+                    out[(mf, M, h)] = {a: complex(np.sum(g.W * yf * st[a])) for a in ('perp', 'Ta', 'Tb', 'long')}
         _PROFILE_CACHE[key] = out
     return _PROFILE_CACHE[key]
 
 
-def radial_integrands(final, hyb, E, r, couplings, nonloc, sigma=SIGMA):
-    """{(Mf, Mi, h): {X: array over the mesh}}: the radial integrand of the amplitude of channel X ('Pi',
-    'Sigma'), summed over the hybrid components and recoupled with the heavy-quark spin; the amplitude is its sum
-    over the mesh. couplings: (c1, c2, c3, c4) on the mesh, in units of e."""
-    w, FF = _radial_weights(E, r, nonloc, sigma)
-    pref = 2.0 * E / np.sqrt(np.pi * sigma) * E_CHARGE
+def radial_integrands(final, hyb, E, r, g, nonloc=False):
+    """{(Mf, Mi, h): {X: array over the mesh}}: radial integrand of the amplitude of channel X ('Pi', 'Sigma'),
+    summed over the hybrid components and recoupled with the heavy-quark spin; the amplitude is its sum over the
+    mesh. g: {LEF: array on the mesh} (e.g. lefs(r, B, kappa))."""
+    if nonloc:
+        raise NotImplementedError('non-local form with the interpolated LEFs of Eq. (eq:gH_interp): not defined yet')
     orb = {}                                                     # (mf, M, h) -> {X: integrand}
     for l, c in hyb.comps:
         cc = final.c * c
         for key, prof in _profiles(final.l, l, hyb.J).items():
             acc = orb.setdefault(key, {X: np.zeros(len(r), dtype=complex) for X in CHANNELS})
-            for k, X, ic, _ in TERMS:
-                if FF[k] is None:
-                    continue
-                acc[X] += pref * cc * couplings[ic] * w[k] * (FF[k] @ prof[k])
+            for X, ch, a, p, s in TERMS:
+                if prof[a] != 0.0:
+                    acc[ch] += s * E ** p * prof[a] * cc * g[X]
     S = final.S
     if hyb.S != S:
         raise ValueError('the hybrid vertex does not change the heavy-quark spin')
@@ -165,19 +152,30 @@ def radial_integrands(final, hyb, E, r, couplings, nonloc, sigma=SIGMA):
     return out
 
 
-class HybridTransition:
-    """hybrid -> final quarkonium + photon at photon energy E (GeV), L or NL form. Stores the radial integrands
-    of the two basis couplings (f_B, f_kappa), so that widths at any (B_Q, kappa_Q) are quadratic forms."""
+def width_lefs(final, hyb, E, r, g):
+    """{'Pi', 'Sigma', 'int', 'total'} (keV) for arbitrary LEFs g = {LEF: array on the mesh} (tests, checks)"""
+    ints = radial_integrands(final, hyb, E, r, g)
+    norm = E / (2.0 * np.pi) / (2 * hyb.Jcal + 1) * GEV2KEV
+    P = sum(abs(np.sum(v['Pi'])) ** 2 for v in ints.values())
+    S = sum(abs(np.sum(v['Sigma'])) ** 2 for v in ints.values())
+    I = sum(2.0 * (np.sum(v['Pi']) * np.conj(np.sum(v['Sigma']))).real for v in ints.values())
+    return {'Pi': norm * P, 'Sigma': norm * S, 'int': norm * I, 'total': norm * (P + S + I)}
 
-    def __init__(self, final, hyb, E, r, nonloc, sigma=SIGMA):
-        self.final, self.hyb, self.E, self.nonloc = final, hyb, E, nonloc
+
+class HybridTransition:
+    """hybrid -> final quarkonium + photon at photon energy E (GeV), local form. Stores the amplitudes of the two
+    basis LEF sets (f_B, f_kappa of lef_basis), so that widths at any v = (B_Q, kappa_Q) are quadratic forms."""
+
+    def __init__(self, final, hyb, E, r, nonloc=False, sigma=SIGMA):
+        if nonloc:
+            raise NotImplementedError('non-local form with the interpolated LEFs: not defined yet')
+        self.final, self.hyb, self.E = final, hyb, E
         self.norm = E / (2.0 * np.pi) / (2 * hyb.Jcal + 1) * GEV2KEV          # GeV -> keV
-        fB, fk = basis_weights(r)
-        ints = [radial_integrands(final, hyb, E, r, (f, f, f, f), nonloc, sigma) for f in (fB, fk)]
+        fB, fk = lef_basis(r, sigma)
+        ints = [radial_integrands(final, hyb, E, r, f) for f in (fB, fk)]
         self.keys = list(ints[0])
-        # T[key, channel, basis, mesh]
-        self.T = np.array([[[ints[a][k][X] for a in range(2)] for X in CHANNELS] for k in self.keys])
-        A = self.T.sum(axis=3)                                                   # [key, channel, basis]
+        A = np.array([[[np.sum(ints[a][k][X]) for a in range(2)] for X in CHANNELS] for k in self.keys])
+        self.A = A                                                              # [key, channel, basis]
         self.H = {}
         for i, X in enumerate(CHANNELS):
             for j, Y in enumerate(CHANNELS):
@@ -198,27 +196,7 @@ class HybridTransition:
         """2x2 matrix H (keV): Gamma = v^T H v"""
         return sum(self.H.values())
 
-    def width_abs(self, v):
-        """width with the radial integrand of every amplitude replaced by its absolute value (no cancellation in
-        the radial integral, neither from the nodes of the wave functions nor from the zero of the vertex): the
-        Gamma_bar of the theory error, Eq. (eq:sigma_th)"""
-        v = np.asarray(v, dtype=float)
-        integ = np.einsum('kxan,a->kn', self.T, v)                          # [key, mesh], channels summed
-        return self.norm * float(np.sum(np.sum(np.abs(integ), axis=1) ** 2))
-
     def amplitudes(self, v):
-        """{(Mf, Mi, h): M} (GeV^-1/2 units of the notes) at v = (B_Q, kappa_Q)"""
+        """{(Mf, Mi, h): M} at v = (B_Q, kappa_Q)"""
         v = np.asarray(v, dtype=float)
-        A = np.einsum('kxan,a->k', self.T, v)
-        return dict(zip(self.keys, A))
-
-
-def width_general(final, hyb, E, r, couplings, nonloc, sigma=SIGMA):
-    """{'Pi', 'Sigma', 'int', 'total'} (keV) for arbitrary couplings (c1, c2, c3, c4)(r) in units of e
-    (used by the tests)"""
-    ints = radial_integrands(final, hyb, E, r, couplings, nonloc, sigma)
-    norm = E / (2.0 * np.pi) / (2 * hyb.Jcal + 1) * GEV2KEV
-    P = sum(abs(np.sum(v['Pi'])) ** 2 for v in ints.values())
-    S = sum(abs(np.sum(v['Sigma'])) ** 2 for v in ints.values())
-    I = sum(2.0 * (np.sum(v['Pi']) * np.conj(np.sum(v['Sigma']))).real for v in ints.values())
-    return {'Pi': norm * P, 'Sigma': norm * S, 'int': norm * I, 'total': norm * (P + S + I)}
+        return dict(zip(self.keys, np.einsum('kxa,a->k', self.A, v)))

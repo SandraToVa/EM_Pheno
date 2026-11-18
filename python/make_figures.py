@@ -1,11 +1,11 @@
-"""Figures of the hybrid analysis (Sec. sec:pheno_H) from results/ (run run_hybrids.py first).
+"""Figures of the hybrid analysis (Sec. sec:pheno_H, v12, local form) from results/ (run run_hybrids.py first).
 
     python3 make_figures.py      (from python/; needs matplotlib)
 
 Written to ../figures and next to sec_pheno.tex (same folder as make_tables.py):
   fig_H_gamma_E.pdf   Gamma(1(s/d)1 -> gamma 1S) as a function of the photon energy, reference fit, both branches,
                       Pi_u and Sigma_u^- channels; lattice (fit inputs), J&S model, BESIII limit at psi(4040)
-  fig_H_kappaH.pdf    kappa_H(r) of the fits (charm, bottom, both branches) and the radial functions u_1S,
+  fig_H_LEFs.pdf      magnetic LEFs g_B_perp(r), g_B_par(r) of the reference fit (charm, bottom) and the radial functions u_1S,
                       u_Pi = r R_Pi, u_Sigma = r R_Sigma of the lowest charmonium (s/d)1 hybrid
 """
 import os, sys, csv, json
@@ -53,9 +53,9 @@ g = lambda k: np.array([float(r[k]) for r in cur])
 
 # ------------------------------------------------------------------------------------------- Gamma(E_q)
 fig, ax = plt.subplots(figsize=(6.4, 4.3))
-ax.fill_between(E, g('total_Brange_lo'), g('total_Brange_hi'), color=BLUE, alpha=0.15, lw=0)
-ax.plot(E, g(f'total_{br}'), color=BLUE, label=f'total, $B_c={summ["fit"][br]["B_c"]:+.3f}$ GeV (reference)')
-ax.plot(E, g(f'total_{alt}'), color=BLUE, ls='--', lw=1.5, label=f'total, $B_c={summ["fit"][alt]["B_c"]:+.3f}$ GeV')
+ax.fill_between(E, g('total_range_lo'), g('total_range_hi'), color=BLUE, alpha=0.15, lw=0)
+ax.plot(E, g(f'total_{br}'), color=BLUE, label=f'total, $B_c={summ["fit"][br]["B_c"]:+.3f}$ (reference)')
+ax.plot(E, g(f'total_{alt}'), color=BLUE, ls='--', lw=1.5, label=f'total, $B_c={summ["fit"][alt]["B_c"]:+.3f}$')
 ax.plot(E, g(f'Sigma_{br}'), color=AQUA, lw=1.5, label=r'$\Gamma_{\Sigma\Sigma}$ ($\Sigma_u^-$ channel)')
 ax.plot(E, g(f'Pi_{br}'), color=ORANGE, lw=1.5, label=r'$\Gamma_{\Pi\Pi}$ ($\Pi_u$ channel)')
 for d, mk in zip(LATTICE_FIT, ('o', 's')):
@@ -80,22 +80,24 @@ ax.grid(axis='y', color='#e4e3df', lw=0.6, which='major')
 ax.legend(fontsize=7, loc='upper left', ncol=2)
 save(fig, 'fig_H_gamma_E.pdf')
 
-# ------------------------------------------------------------------------------------------- kappa_H(r)
-kc = [r for r in read('hybrid_curves.csv') if r['curve'] == 'kappa_H(r)']
+# ------------------------------------------------------------------------------------------- LEFs g_B(r)
+kc = [r for r in read('hybrid_curves.csv') if r['curve'] == 'LEF(r)']
 rr = np.array([float(r['x']) for r in kc])
-k = lambda key: np.array([float(r[key]) for r in kc])
+E_CH = np.sqrt(4 * np.pi / 137.035999)
+k = lambda key: np.array([float(r[key]) for r in kc]) / E_CH          # in units of e (GeV^-1)
 fig, (a1, a2) = plt.subplots(1, 2, figsize=(9.2, 3.6))
 a1.axhline(0, color=INK2, lw=0.6)
-a1.plot(rr, k(f'c_{br}'), color=BLUE, label=f'charm, reference ($B_c={summ["fit"][br]["B_c"]:+.3f}$)')
-a1.plot(rr, k(f'c_{alt}'), color=BLUE, ls='--', lw=1.5, label=f'charm, $B_c={summ["fit"][alt]["B_c"]:+.3f}$')
-a1.plot(rr, k(f'b_{br}'), color=ORANGE, label='bottom, reference')
-a1.plot(rr, k(f'b_{alt}'), color=ORANGE, ls='--', lw=1.5, label='bottom, other branch')
+a1.plot(rr, k(f'c_B_perp_{br}'), color=BLUE, label=r'$g_{B\perp}$, charm')
+a1.plot(rr, k(f'c_B_par_{br}'), color=BLUE, ls='--', lw=1.5, label=r'$g_{B\parallel}$, charm')
+a1.plot(rr, k(f'b_B_perp_{br}'), color=ORANGE, label=r'$g_{B\perp}$, bottom')
+a1.plot(rr, k(f'b_B_par_{br}'), color=ORANGE, ls='--', lw=1.5, label=r'$g_{B\parallel}$, bottom')
 a1.axvline(R0, color=INK2, lw=0.8, ls=':')
-a1.text(R0 + 0.1, 0.005, r'$r_0$', color=INK2)
+a1.text(R0 + 0.1, a1.get_ylim()[0] * 0.9, r'$r_0$', color=INK2)
 a1.set_xlabel(r'$r$ (GeV$^{-1}$)')
-a1.set_ylabel(r'$\kappa_H(r)$ (units of $e$)')
+a1.set_ylabel(r'$g_X(r)/e$ (GeV$^{-1}$)')
 a1.set_xlim(0, 8)
 a1.legend(fontsize=7.5)
+a1.set_title(f'reference fit, $B_c={summ["fit"][br]["B_c"]:+.3f}$', fontsize=9, color=INK2)
 lib = Library('c')
 Y = hybrid(lib, 'Y', 1, 'plus', 1)
 pr = Y.projections()
@@ -110,4 +112,4 @@ a2.set_ylabel(r'$u(r)$ (GeV$^{1/2}$)')
 a2.legend(fontsize=8)
 a2.set_title(r'charmonium $1(s/d)_1$ hybrid and $1S$', fontsize=9, color=INK2)
 fig.tight_layout()
-save(fig, 'fig_H_kappaH.pdf')
+save(fig, 'fig_H_LEFs.pdf')

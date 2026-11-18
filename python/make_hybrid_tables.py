@@ -1,4 +1,4 @@
-"""LaTeX table bodies of the hybrid part of Sec. 5 from results/ (run run_hybrids.py first; no number is typed by hand).
+"""LaTeX table bodies of the hybrid part of Sec. 5 (v12, local form) from results/ (run run_hybrids.py first; no number is typed by hand).
 
     python3 make_hybrid_tables.py        (from python/)
 
@@ -96,13 +96,12 @@ def jpc(s):
 summ = json.load(open(os.path.join(RES, 'hybrid_summary.json')))
 
 # ----------------------------------------------------------------------------------------------- tab:H_fit
-CASE = {'ref': r'reference (NL, $t_0$)', 'form': 'local (L)', 'theory': r'$\sigma_{\rm th}$ at the model width',
-        'eps0': r'$\epsilon=0$', 'M-': r'$M_{\rm lat}-1\sigma$', 'M+': r'$M_{\rm lat}+1\sigma$',
-        'kappa-': r'$\kappa_c-1\sigma$', 'kappa+': r'$\kappa_c+1\sigma$'}
+CASE = {'ref': r'reference ($\epsilon=0.3$)', 'eps0': r'$\epsilon=0$', 'M-': r'$M_{\rm lat}-1\sigma$',
+        'M+': r'$M_{\rm lat}+1\sigma$', 'kappa-': r'$\kappa_c$ (max fit)', 'kappa+': r'$\kappa_c$ (min fit)'}
 rows = []
 fit = read('hybrid_fit.csv')
 for case in CASE:
-    rr = sorted([r for r in fit if r['case'] == case], key=lambda r: -r['B_c'])
+    rr = sorted([r for r in fit if r['case'] == case], key=lambda r: r['chi2'])
     for i, r in enumerate(rr):
         B = f"${r['B_c']:+.3f}^{{+{r['B_c_hi']:.3f}}}_{{-{r['B_c_lo']:.3f}}}$"
         rows.append(f"{CASE[case] if i == 0 else ''} & ${r['kappa_c']:+.4f}$ & ${r['branch']}$ & {B} & "
@@ -130,11 +129,11 @@ for r in read('hybrid_lattice.csv'):
         lat = '--'
     if np.isfinite(r['E_q']):
         rows.append(f"{LAB[r['channel']]} & {r['M_i']:.3f} & {1e3 * r['E_q']:.0f} & {lat} & {r['JS_keV']:.0f} & "
-                    f"{r['NL']:.0f} [{r['NL_lo']:.0f}, {r['NL_hi']:.0f}] & {g(r['Pi'])} & {g(r['Sigma'])} & {g(r['int'])} & "
-                    f"{r['L']:.0f} & {r['NL_alt']:.0f} \\\\")
+                    f"{r['G']:.0f} [{r['G_lo']:.0f}, {r['G_hi']:.0f}] & {g(r['Pi'])} & {g(r['Sigma'])} & {g(r['int'])} & "
+                    f"{r['G_alt']:.0f} \\\\")
     else:
         rows.append(f"{LAB[r['channel']]} & {r['M_i']:.3f} & -- & {lat} & {r['JS_keV']:.0f} & "
-                    r"\multicolumn{6}{c}{0 ($\Delta S=1$)} \\")
+                    r"\multicolumn{5}{c}{0 ($\Delta S=1$)} \\")
 write('tab_H_lattice.tex', rows + [r'\hline'])
 
 # ---------------------------------------------------------------------------------------------- tab:H_pred
@@ -155,9 +154,9 @@ for fl in ('c', 'b'):
         gt = '--' if not np.isfinite(r['Gtot_MeV']) else f"{r['Gtot_MeV']:.0f}"
         head = (f"{HYBNAME[r['hybrid']]} & {jpc(r['JPC'])} & {tn(r['candidate'])} & {mi} & {gt} & "
                 f"{100 * r['P_Sigma']:.0f}") if first else ' & & & & & '
-        extra = f" & {g(r['NL_eQ'])}" if fl == 'b' else ''
+        extra = f" & {g(r['G_eQ'])}" if fl == 'b' else ''
         rows.append(f"{head} & {tn(r['final'], r['M_f_src'] != 'exp')} & {1e3 * r['E_q']:.0f} & {g(r['Pi'])} & {g(r['Sigma'])} & {g(r['int'])} & "
-                    f"{g(r['NL'])} & [{g(r['NL_lo'])}, {g(r['NL_hi'])}] & {g(r['L'])} & {g(r['NL_alt'])}{extra} & {br} \\\\")
+                    f"{g(r['G'])} & [{g(r['G_lo'])}, {g(r['G_hi'])}] & {g(r['G_alt'])}{extra} & {br} \\\\")
     write(f'tab_H_pred_{fl}.tex', rows + [r'\hline'])
 
 # --------------------------------------------------------------------------------------------- tab:H_spin1
@@ -179,7 +178,7 @@ for fl in ('c', 'b'):
                 if JPCS1[h][Jcal] is None:
                     cells.append('')
                 elif m:
-                    cells.append(g(m[0]['NL']))
+                    cells.append(g(m[0]['G']))
                     Eq = m[0]['E_q']
                 else:
                     cells.append('0')
@@ -192,6 +191,6 @@ write('tab_H_spin1.tex', rows)
 rows = []
 for r in read('hybrid_besiii.csv'):
     rows.append(f"{tn(r['candidate'])} & {HYBNAME[r['hybrid']]} & {r['sqrt_s']:.3f} & {r['sigma_UL_pb']:.1f} & "
-                f"{r['Gamma_UL_keV']:.0f} & {g(r['Pi'])} & {g(r['Sigma'])} & {g(r['int'])} & {r['NL']:.0f} "
-                f"[{r['NL_lo']:.0f}, {r['NL_hi']:.0f}] & {r['L']:.0f} & {r['NL_alt']:.0f} & {r['ratio']:.2f} \\\\")
+                f"{r['Gamma_UL_keV']:.0f} & {g(r['Pi'])} & {g(r['Sigma'])} & {g(r['int'])} & {r['G']:.0f} "
+                f"[{r['G_lo']:.0f}, {r['G_hi']:.0f}] & {r['G_alt']:.0f} & {r['ratio']:.2f} \\\\")
 write('tab_H_besiii.tex', rows + [r'\hline'])
